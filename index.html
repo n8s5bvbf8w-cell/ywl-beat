@@ -2,263 +2,211 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1410">
 <title>羊舞岭窑 · Beat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap');
-
 :root{
-  --bg-deep:#0b1410; --bg-mid:#13221c;
-  --celadon:#8fbfa0; --celadon-light:#c3e0cc; --celadon-glow:#8fe0b0;
+  --bg-deep:#0b1410; --bg-deep2:#0f1c16;
+  --celadon:#7bc9a7; --celadon-light:#a8dbc0; --celadon-glow:#8fe0b0;
   --gold:#d9b46a; --gold-bright:#f0d060;
-  --vermillion:#b23a2e; --cream:#e8dcc0;
-  --miss-red:#e06a5f; --good-yellow:#f0cf6a;
+  --vermillion:#b23a2e; --vermillion-bright:#d1483a;
+  --good-yellow:#e8b84b; --miss-red:#c96a5a;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
 }
 *{box-sizing:border-box;}
-html,body{margin:0;height:100%;overflow:hidden;background:var(--bg-deep);
-  font-family:'Noto Serif SC',serif; color:var(--cream); -webkit-tap-highlight-color:transparent;}
-
-#crackleOverlay{
-  position:fixed; inset:0; z-index:9999; pointer-events:none;
-  background-repeat:repeat; background-size:640px 640px;
-  opacity:0.05; mix-blend-mode:overlay;
-}
-#inkBgCanvas{position:fixed; inset:0; z-index:0; pointer-events:none;}
-
-#app{position:relative;width:100%;height:100%;z-index:1;}
-.screen{position:absolute;inset:0;display:none;flex-direction:column;
-  align-items:center;justify-content:center;
-  background:radial-gradient(ellipse at 50% 30%, rgba(19,34,28,0.5) 0%, rgba(11,20,16,0.72) 70%);}
+html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);color:#eee3cf;
+  font-family:'Noto Serif SC',serif;overflow:hidden;-webkit-tap-highlight-color:transparent;
+  overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;}
+#inkBgCanvas{position:fixed;inset:0;z-index:0;}
+#crackleOverlay{position:fixed;inset:0;z-index:1;mix-blend-mode:overlay;opacity:.45;background-size:cover;pointer-events:none;}
+#app{position:fixed;inset:0;z-index:2;}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
+  padding:calc(18px + var(--safe-t)) calc(16px + var(--safe-r)) calc(18px + var(--safe-b)) calc(16px + var(--safe-l));
+  overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;}
 .screen.active{display:flex;}
+.frame-border{position:absolute;top:calc(10px + var(--safe-t));right:calc(10px + var(--safe-r));
+  bottom:calc(10px + var(--safe-b));left:calc(10px + var(--safe-l));
+  border:1px solid rgba(217,180,106,.55);border-radius:8px;pointer-events:none;}
+.frame-border::before{content:'';position:absolute;inset:6px;border:1px solid rgba(123,201,167,.35);border-radius:5px;}
+.ink-decor{width:60px;height:60px;opacity:.5;margin:6px 0;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, rgba(123,201,167,.25), transparent 70%);}
 
-.ink-decor{position:absolute;left:0;width:100%;height:160px;opacity:0.35;pointer-events:none;}
-.ink-decor.top{top:0;background:linear-gradient(to bottom, rgba(143,191,160,0.12), transparent);}
-.ink-decor.bottom{bottom:0;
-  background:
-    linear-gradient(to top, rgba(0,0,0,0.5), transparent),
-    radial-gradient(120px 60px at 15% 100%, rgba(143,191,160,0.25), transparent),
-    radial-gradient(180px 80px at 55% 100%, rgba(143,191,160,0.18), transparent),
-    radial-gradient(140px 70px at 85% 100%, rgba(143,191,160,0.22), transparent);
-}
-.frame-border{position:absolute;inset:14px;border:1px solid rgba(217,180,106,0.35);
-  border-radius:4px;pointer-events:none;}
-.frame-border::before{content:'';position:absolute;inset:6px;
-  border:1px solid rgba(217,180,106,0.15);border-radius:2px;}
+#screenTitle{justify-content:center;text-align:center;gap:6px;}
+.brush-title{font-family:'Ma Shan Zheng',cursive;font-size:clamp(34px,10vw,64px);
+  background:linear-gradient(180deg,#f0d060,#d9b46a 55%,#b2823a);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 18px rgba(217,180,106,.45));margin:0 0 4px;letter-spacing:2px;}
+.brush-title .dot{color:var(--celadon-light);}
+.subtitle{color:var(--celadon-light);letter-spacing:4px;font-size:14px;opacity:.85;margin:0 0 30px;}
 
-.brush-title{
-  font-family:'Ma Shan Zheng',cursive;
-  font-size:clamp(40px,9vw,68px);letter-spacing:6px;margin:0;
-  background:linear-gradient(180deg, var(--gold-bright), var(--gold) 60%, #a9803e);
-  -webkit-background-clip:text; background-clip:text; color:transparent;
-  text-shadow:0 0 30px rgba(217,180,106,0.35);
-  text-align:center;
-}
-.brush-title .dot{color:var(--celadon-light); -webkit-text-fill-color:var(--celadon-light);}
-.subtitle{font-size:clamp(12px,3vw,15px);letter-spacing:8px;color:var(--celadon-light);opacity:0.75;margin:10px 0 40px;text-align:center;}
-.section-title{font-family:'Ma Shan Zheng',cursive;font-size:clamp(26px,6vw,34px);color:var(--gold);margin-bottom:8px;text-align:center;}
-.section-title::after{content:'';display:block;width:70px;height:1px;margin:10px auto 24px;
-  background:linear-gradient(90deg, transparent, var(--gold), transparent);}
+.btn-elegant{font-family:'Noto Serif SC',serif;font-size:15px;letter-spacing:3px;
+  padding:12px 26px;border-radius:6px;border:1px solid var(--gold);
+  background:linear-gradient(180deg, rgba(217,180,106,.18), rgba(217,180,106,.05));
+  color:var(--gold-bright);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;transition:transform .12s, box-shadow .12s, background .12s;}
+.btn-elegant:active{transform:scale(.95);box-shadow:0 0 16px rgba(217,180,106,.4);}
+.btn-elegant.secondary{border-color:var(--celadon);color:var(--celadon-light);
+  background:linear-gradient(180deg, rgba(123,201,167,.12), rgba(123,201,167,.03));}
+.btn-elegant:disabled{opacity:.35;pointer-events:none;}
 
-.btn-elegant{
-  background:transparent;border:1px solid var(--gold);color:var(--gold-bright);
-  font-family:'Noto Serif SC',serif;font-size:15px;letter-spacing:4px;
-  padding:11px 30px;border-radius:2px;cursor:pointer;position:relative;
-  transition:all 0.25s; margin-top:10px; white-space:nowrap;
-}
-.btn-elegant:hover{background:rgba(217,180,106,0.12);box-shadow:0 0 18px rgba(217,180,106,0.35);}
-.btn-elegant:disabled{opacity:0.35;cursor:not-allowed;}
-.btn-elegant.secondary{border-color:rgba(217,180,106,0.4);color:rgba(217,180,106,0.7);font-size:13px;padding:9px 22px;}
+.icon-btn{position:fixed;top:calc(12px + var(--safe-t));right:calc(12px + var(--safe-r));
+  width:38px;height:38px;border-radius:50%;z-index:60;background:rgba(11,20,16,.6);
+  border:1px solid var(--gold);color:var(--gold-bright);font-size:17px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;}
 
-.icon-btn{position:fixed;top:18px;right:18px;z-index:30;
-  width:38px;height:38px;border-radius:50%;
-  border:1px solid rgba(217,180,106,0.4); background:rgba(19,34,28,0.6);
-  color:var(--gold); font-size:17px; cursor:pointer; backdrop-filter:blur(6px);}
-.icon-btn:hover{background:rgba(217,180,106,0.15);}
-
-/* ===== 曲库 / 卷轴 ===== */
-#screenSongSelect{position:relative;padding:10px;}
-.song-header{text-align:center;margin-bottom:4px;}
-#scrollOuter{display:flex;align-items:center;gap:8px;width:100%;justify-content:center;}
-.carousel-arrow{background:transparent;border:none;color:var(--gold);font-size:28px;
-  cursor:pointer;opacity:0.6;transition:opacity 0.2s;flex:0 0 auto;padding:4px 6px;}
-.carousel-arrow:hover{opacity:1;}
-#scrollViewport{width:min(640px, 84vw);max-width:640px;overflow-x:auto;overflow-y:hidden;
-  position:relative;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+#screenSongSelect{padding-top:calc(14px + var(--safe-t));}
+.song-header{width:100%;text-align:center;margin-bottom:6px;}
+.section-title{font-family:'Ma Shan Zheng',cursive;font-size:28px;color:var(--gold-bright);
+  text-shadow:0 0 14px rgba(217,180,106,.4);letter-spacing:6px;margin:6px 0 10px;}
+#scrollOuter{display:flex;align-items:center;width:100%;max-width:640px;flex:1;min-height:0;}
+.carousel-arrow{flex:0 0 auto;width:38px;height:60px;background:none;border:none;color:var(--gold);
+  font-size:26px;cursor:pointer;touch-action:manipulation;opacity:.8;}
+#scrollViewport{flex:1;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  touch-action:pan-x;display:flex;height:100%;}
 #scrollViewport::-webkit-scrollbar{display:none;}
-#scrollTrack{display:flex;gap:min(30px,4vw);padding:26px 10px;perspective:1400px;}
+#scrollTrack{display:flex;gap:16px;padding:10px 20px;align-items:center;}
+.scroll-card{scroll-snap-align:center;flex:0 0 auto;width:min(230px,68vw);
+  display:flex;flex-direction:column;align-items:center;
+  filter:drop-shadow(0 8px 18px rgba(0,0,0,.4));transition:transform .2s, opacity .2s;
+  opacity:.75;transform:scale(.94);}
+.scroll-card.selected{opacity:1;transform:scale(1);}
+.scroll-dowel{width:100%;height:14px;border-radius:7px;
+  background:linear-gradient(180deg,#6b4a30,#3d2a1c);box-shadow:0 2px 4px rgba(0,0,0,.4);}
+.scroll-paper{width:100%;min-height:260px;
+  background:linear-gradient(180deg, rgba(233,224,200,.08), rgba(233,224,200,.03)), var(--bg-deep2);
+  border:1px solid rgba(217,180,106,.3);border-left:none;border-right:none;
+  padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;}
+.scroll-seal{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:4px;
+  border:2px solid var(--vermillion);color:var(--vermillion);font-family:'Ma Shan Zheng',cursive;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  background:rgba(178,58,46,.08);transform:rotate(-6deg);}
+.scroll-title{font-family:'Ma Shan Zheng',cursive;font-size:26px;color:var(--gold-bright);margin:14px 0 2px;}
+.scroll-pinyin{font-size:11px;letter-spacing:1px;color:var(--celadon-light);opacity:.7;margin:0 0 10px;}
+.scroll-diff{color:var(--vermillion-bright);font-size:14px;letter-spacing:3px;margin-bottom:6px;}
+.scroll-best{font-size:11px;color:var(--gold);opacity:.85;margin:0 0 4px;text-align:center;}
+.scroll-status{font-size:13px;letter-spacing:2px;margin:6px 0;}
+.scroll-status.locked{color:#8a7a6a;}
+.scroll-status.progress-locked{color:var(--miss-red);}
+.scroll-status.ready{color:var(--celadon-glow);}
+.scroll-card.locked .scroll-paper, .scroll-card.progress-locked .scroll-paper{filter:grayscale(.4) brightness(.75);}
+.scroll-edit{margin-top:auto;font-size:11px;color:var(--celadon-light);background:none;
+  border:1px solid rgba(123,201,167,.4);border-radius:4px;padding:5px 10px;cursor:pointer;touch-action:manipulation;}
+.song-footer{width:100%;max-width:640px;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:10px 4px calc(6px + var(--safe-b));flex-wrap:wrap;}
+#selectedSongLabel{font-size:13px;color:var(--celadon-light);flex:1;text-align:center;}
 
-.scroll-card{flex:0 0 min(190px,58vw);scroll-snap-align:center;
-  display:flex;flex-direction:column;align-items:center;transform-style:preserve-3d;
-  cursor:pointer;filter:drop-shadow(0 12px 24px rgba(0,0,0,0.5));transition:transform 0.35s ease;}
-.scroll-card:hover{transform:translateY(-8px) rotateX(4deg);}
-.scroll-card.selected{transform:translateY(-10px) scale(1.035);}
-.scroll-dowel{width:100%;height:15px;border-radius:8px;position:relative;
-  background:
-    linear-gradient(90deg, transparent 38%, rgba(255,255,255,0.28) 50%, transparent 62%),
-    linear-gradient(180deg,#8a5f3a,#3f2a18);
-  box-shadow:0 2px 5px rgba(0,0,0,0.5), inset 0 1px 3px rgba(255,255,255,0.15);}
-.scroll-dowel::before,.scroll-dowel::after{content:'';position:absolute;width:11px;height:25px;
-  border-radius:5px;background:linear-gradient(180deg,#a97a48,#3f2a18);top:-5px;
-  box-shadow:0 0 4px rgba(0,0,0,0.4);}
-.scroll-dowel::before{left:-15px;} .scroll-dowel::after{right:-15px;}
-
-.scroll-paper{width:100%;min-height:250px;position:relative;overflow:hidden;
-  background:
-    radial-gradient(circle at 25% 10%, rgba(217,180,106,0.14), transparent 55%),
-    radial-gradient(circle at 80% 90%, rgba(143,191,160,0.08), transparent 60%),
-    linear-gradient(175deg,#f0e7d2,#e2d4ac 60%,#dcccA0);
-  border-left:1px solid rgba(0,0,0,0.15);border-right:1px solid rgba(0,0,0,0.15);
-  display:flex;flex-direction:column;align-items:center;padding:16px 8px;
-  color:#3c3222;
-  box-shadow:
-    inset 0 16px 20px -14px rgba(35,26,12,0.5),
-    inset 0 -16px 20px -14px rgba(35,26,12,0.5),
-    inset 0 0 34px rgba(120,95,55,0.14);
-  animation:paperBreathe 6s ease-in-out infinite;
-}
-.scroll-paper::before{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(105deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 16%, rgba(255,255,255,0) 84%, rgba(255,255,255,0.12) 100%);
-}
-@keyframes paperBreathe{
-  0%,100%{background-position:0 0, 0 0, 0 0;}
-  50%{background-position:6% 3%, -4% -3%, 0 0;}
-}
-.scroll-card.locked .scroll-paper{filter:grayscale(0.55) brightness(0.72);}
-.scroll-card.progress-locked .scroll-paper{filter:grayscale(0.7) brightness(0.55);}
-.scroll-seal{position:absolute;top:9px;right:9px;width:30px;height:30px;border-radius:4px;
-  border:2px solid var(--vermillion);color:var(--vermillion);display:flex;
-  align-items:center;justify-content:center;font-family:'Ma Shan Zheng',cursive;
-  font-size:15px;transform:rotate(-6deg);opacity:0.85;z-index:1;}
-.scroll-card.progress-locked .scroll-seal{border-color:#7a7264;color:#7a7264;}
-.scroll-title{font-family:'Ma Shan Zheng',cursive;font-size:30px;margin:22px 0 2px;letter-spacing:2px;
-  text-shadow:0 0 1px rgba(60,50,34,0.45),1px 1px 3px rgba(60,50,34,0.2);z-index:1;}
-.scroll-pinyin{font-family:'Ma Shan Zheng',cursive;font-size:14px;opacity:0.7;
-  letter-spacing:1.5px;margin-bottom:8px;color:#6b5a3a;font-style:italic;z-index:1;}
-.scroll-diff{color:var(--vermillion);font-size:13px;letter-spacing:3px;margin-bottom:4px;z-index:1;}
-.scroll-best{font-size:10.5px;color:#8a6a30;letter-spacing:1px;margin:2px 0;z-index:1;}
-.scroll-status{font-size:12.5px;letter-spacing:3px;margin-top:auto;text-align:center;padding:0 4px;z-index:1;}
-.scroll-status.ready{color:#3c7a52;}
-.scroll-status.locked{color:#8a7f66;}
-.scroll-status.progress-locked{color:#8a5a52;}
-.scroll-edit{margin-top:6px;font-size:10.5px;background:transparent;z-index:1;
-  border:1px solid rgba(60,50,34,0.35);color:#5c4c30;padding:2px 9px;border-radius:9px;cursor:pointer;}
-.scroll-card.selected .scroll-paper{box-shadow:0 0 0 2px var(--gold-bright),0 0 24px rgba(240,208,96,0.5);}
-
-.song-footer{margin-top:16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
-  gap:10px 18px;padding:0 12px;text-align:center;}
-#selectedSongLabel{font-size:13px;color:var(--celadon-light);opacity:0.8;letter-spacing:2px;}
-
-/* ===== 弹窗 ===== */
-.modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
-  background:rgba(8,13,10,0.55);backdrop-filter:blur(5px);padding:16px;}
+.modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.6);
+  display:flex;align-items:center;justify-content:center;padding:20px;}
 .modal.hidden{display:none;}
-.modal-panel{background:rgba(19,34,28,0.9);border:1px solid rgba(217,180,106,0.4);
-  border-radius:10px;padding:24px 26px;width:400px;max-width:100%;max-height:88vh;overflow-y:auto;
-  box-shadow:0 24px 70px rgba(0,0,0,0.6);backdrop-filter:blur(12px);}
-.modal-panel h3{font-family:'Ma Shan Zheng',cursive;color:var(--gold);text-align:center;
-  margin:0 0 16px;font-size:24px;}
-.load-row{margin-bottom:13px;font-size:12.5px;color:#a89b7d;}
-.load-row label{display:block;margin-bottom:5px;}
-.load-row input[type=file]{width:100%;color:var(--cream);background:#1c1c1c;
-  border:1px solid #444;border-radius:4px;padding:4px 8px;font-size:11px;}
+.modal-panel{width:min(440px,92vw);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:linear-gradient(180deg,#132018,#0e1712);border:1px solid var(--gold);
+  border-radius:10px;padding:20px;touch-action:pan-y;}
+.modal-panel h3{font-family:'Ma Shan Zheng',cursive;color:var(--gold-bright);text-align:center;
+  font-size:22px;margin:0 0 14px;}
+.load-row{margin-bottom:14px;}
+.load-row label{display:block;font-size:12px;color:var(--celadon-light);margin-bottom:5px;}
+.load-row input[type=file]{width:100%;font-size:12px;color:#ccc;}
+.load-row input[type=range]{width:100%;}
 .hit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
-  font-family:monospace;font-size:11px;border:1px solid #444;border-radius:4px;padding:7px;}
-.modal-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:12px;}
-.modal-divider{border-top:1px solid rgba(217,180,106,0.25);margin:16px 0;}
-.small-note{font-size:10.5px;color:#8a7f66;line-height:1.5;margin-top:-4px;margin-bottom:10px;}
+.modal-divider{height:1px;background:rgba(217,180,106,.25);margin:16px 0;}
+.small-note{font-size:11px;color:#9ab3a5;line-height:1.6;}
+.modal-actions{display:flex;justify-content:center;gap:12px;margin-top:10px;}
+#importChartText{width:100%;height:90px;background:#0b1410;color:#dcd3bd;
+  border:1px solid rgba(217,180,106,.3);border-radius:6px;padding:8px;font-size:11px;
+  resize:vertical;touch-action:auto;}
 
-#loadingOverlay{flex-direction:column;}
-.ink-spinner{width:54px;height:54px;border-radius:50%;
-  border:3px solid rgba(217,180,106,0.15);border-top-color:var(--gold-bright);
-  animation:spin 0.9s linear infinite;}
+#loadingOverlay{position:fixed;inset:0;z-index:90;background:rgba(11,20,16,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+#loadingOverlay.hidden{display:none;}
+.ink-spinner{width:52px;height:52px;border-radius:50%;border:3px solid rgba(217,180,106,.2);
+  border-top-color:var(--gold-bright);animation:spin 1s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-#loadingText{margin-top:16px;color:var(--gold);font-family:'Ma Shan Zheng',cursive;font-size:20px;}
+#loadingText{font-family:'Ma Shan Zheng',cursive;color:var(--gold-bright);font-size:18px;}
 
-/* ===== 游戏界面 ===== */
-#screenGame{align-items:center;padding:8px;}
-#hud{position:absolute;top:16px;left:0;width:100%;display:flex;justify-content:space-between;
-  padding:0 min(40px,6vw);font-size:14px;color:var(--gold);letter-spacing:2px;z-index:5;}
-#comboNum{font-family:'Ma Shan Zheng',cursive;font-size:clamp(30px,7vw,42px);color:var(--gold-bright);
-  margin-right:8px;text-shadow:0 0 14px rgba(240,208,96,0.5);display:inline-block;transition:transform 0.08s;}
-#comboNum.pulse{transform:scale(1.3);}
-.combo-label{font-size:11px;opacity:0.7;}
-#btnPauseGame{position:absolute;top:12px;left:14px;z-index:6;
-  background:transparent;border:1px solid rgba(217,180,106,0.4);color:var(--gold);
-  border-radius:50%;width:34px;height:34px;font-size:14px;cursor:pointer;}
-#btnPauseGame:hover{background:rgba(217,180,106,0.15);}
+#screenGame{padding:0;}
+#btnPauseGame{position:absolute;top:calc(10px + var(--safe-t));left:calc(10px + var(--safe-l));
+  width:38px;height:38px;border-radius:50%;background:rgba(11,20,16,.6);
+  border:1px solid var(--gold);color:var(--gold-bright);font-size:16px;z-index:10;touch-action:manipulation;}
+#hud{position:absolute;top:calc(10px + var(--safe-t));right:calc(10px + var(--safe-r));z-index:10;text-align:right;}
+#comboDisplay{font-family:'Ma Shan Zheng',cursive;font-size:clamp(22px,6vw,34px);color:var(--gold-bright);
+  text-shadow:0 0 14px rgba(217,180,106,.5);}
+#comboNum.pulse{animation:comboPulse .25s ease-out;}
+@keyframes comboPulse{0%{transform:scale(1.35);}100%{transform:scale(1);}}
+.combo-label{font-size:11px;color:var(--celadon-light);margin-left:4px;}
+#scoreDisplay{font-size:13px;color:var(--celadon-light);margin-top:2px;}
+#scoreNum{color:var(--gold-bright);font-weight:600;}
 
-#trackWrap{position:relative;width:min(480px,92vw);height:min(75vh,700px);margin-top:max(16px,3vh);}
-#gameCanvas{width:100%;height:100%;display:block;border-radius:6px;
-  box-shadow:0 0 40px rgba(0,0,0,0.5), inset 0 0 60px rgba(143,191,160,0.06);}
+#trackWrap{position:absolute;inset:0;overflow:hidden;}
+#gameCanvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;}
+#touchLaneLayer{position:absolute;inset:0;display:flex;z-index:4;}
+.touch-lane{flex:1;height:100%;touch-action:none;}
+#judgeTextLayer{position:absolute;left:0;right:0;top:38%;display:flex;justify-content:center;
+  z-index:7;pointer-events:none;}
+.judge-pop{font-family:'Ma Shan Zheng',cursive;font-size:clamp(26px,7vw,40px);text-align:center;
+  animation:judgePop .78s ease-out forwards;}
+.judge-pop .sub{display:block;font-family:'Noto Serif SC',serif;font-size:11px;letter-spacing:3px;
+  opacity:.75;margin-top:2px;}
+.judge-pop.perfect{color:var(--celadon-glow);text-shadow:0 0 16px rgba(143,224,176,.6);}
+.judge-pop.good{color:var(--good-yellow);text-shadow:0 0 14px rgba(232,184,75,.5);}
+.judge-pop.miss{color:var(--miss-red);text-shadow:0 0 14px rgba(201,106,90,.5);}
+@keyframes judgePop{0%{opacity:0;transform:translateY(10px) scale(.7);}
+  25%{opacity:1;transform:translateY(0) scale(1.08);}70%{opacity:1;}
+  100%{opacity:0;transform:translateY(-16px) scale(1);}}
 
-#judgeTextLayer{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:6;}
-@keyframes judgePop{
-  0%{opacity:0;transform:translate(-50%,10px) scale(0.75);}
-  15%{opacity:1;transform:translate(-50%,-8px) scale(1.15);}
-  70%{opacity:1;transform:translate(-50%,-28px) scale(1);}
-  100%{opacity:0;transform:translate(-50%,-58px) scale(0.92);}
-}
-.judge-pop{position:absolute;left:50%;top:34%;text-align:center;
-  font-size:clamp(28px,6vw,40px);font-weight:700;font-family:'Ma Shan Zheng',cursive;
-  text-shadow:0 0 16px currentColor;animation:judgePop 0.75s ease-out forwards;}
-.judge-pop.perfect{color:var(--celadon-glow);}
-.judge-pop.good{color:var(--good-yellow);}
-.judge-pop.miss{color:var(--miss-red);}
-.judge-pop .sub{display:block;font-size:11px;letter-spacing:5px;
-  font-family:'Noto Serif SC',serif;opacity:0.75;margin-top:4px;}
-
-#keyHints{position:absolute;left:0;bottom:min(34px,4vh);width:100%;
-  display:flex;justify-content:space-around;padding:0 8px;z-index:5;}
+#keyHints{position:absolute;left:0;bottom:calc(min(34px,4vh) + var(--safe-b));width:100%;
+  display:flex;justify-content:space-around;padding:0 calc(8px + var(--safe-l)) 0 calc(8px + var(--safe-r));z-index:8;}
 .seal{width:min(58px,13vw);height:min(58px,13vw);border:3px solid var(--vermillion);color:var(--vermillion);
   font-family:'Ma Shan Zheng',cursive;font-size:clamp(18px,4vw,26px);border-radius:6px;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(178,58,46,0.06);box-shadow:inset 0 0 8px rgba(178,58,46,0.3);
-  transition:transform .08s, box-shadow .08s, background .08s;}
-.seal.pressed{transform:scale(0.85);
-  box-shadow:0 0 20px 4px rgba(217,180,106,0.6), inset 0 0 10px rgba(178,58,46,0.5);
-  background:rgba(217,180,106,0.18); border-color:var(--gold-bright); color:var(--gold-bright);}
+  display:flex;align-items:center;justify-content:center;background:rgba(178,58,46,.06);
+  box-shadow:inset 0 0 8px rgba(178,58,46,.3);transition:transform .08s, box-shadow .08s, background .08s;
+  touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;}
+.seal.pressed{transform:scale(.85);box-shadow:0 0 20px 4px rgba(217,180,106,.6), inset 0 0 10px rgba(178,58,46,.5);
+  background:rgba(217,180,106,.18);border-color:var(--gold-bright);color:var(--gold-bright);}
 
-#pauseOverlay{position:absolute;inset:0;background:rgba(11,20,16,0.9);
+#pauseOverlay{position:absolute;inset:0;background:rgba(11,20,16,.92);
   display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;}
 #pauseOverlay.hidden{display:none;}
-#pauseOverlay p{font-family:'Ma Shan Zheng',cursive;font-size:32px;color:var(--gold);margin-bottom:6px;}
-.pause-actions{display:flex;flex-direction:column;gap:14px;margin-top:20px;align-items:center;}
+#pauseOverlay p{font-family:'Ma Shan Zheng',cursive;font-size:30px;color:var(--gold);margin-bottom:6px;}
+.pause-actions{display:flex;flex-direction:column;gap:14px;margin-top:18px;align-items:center;}
 
 #countdownLayer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   z-index:15;pointer-events:none;}
-.countdown-num{font-family:'Ma Shan Zheng',cursive;font-size:clamp(60px,20vw,120px);color:var(--gold-bright);
-  text-shadow:0 0 40px rgba(217,180,106,0.6); animation:cdPop 0.9s ease-out;}
-@keyframes cdPop{0%{opacity:0;transform:scale(0.5);}30%{opacity:1;transform:scale(1.1);}100%{opacity:0;transform:scale(1);}}
+.countdown-num{font-family:'Ma Shan Zheng',cursive;font-size:clamp(56px,18vw,110px);color:var(--gold-bright);
+  text-shadow:0 0 40px rgba(217,180,106,.6);animation:cdPop .55s ease-out;}
+@keyframes cdPop{0%{opacity:0;transform:scale(.5);}30%{opacity:1;transform:scale(1.1);}100%{opacity:0;transform:scale(1);}}
 
-/* ===== 结算 ===== */
-#screenResult{padding:16px;}
-.grade-seal{width:140px;height:100px;margin:0 auto 14px;
-  border:4px double var(--vermillion);border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Ma Shan Zheng',cursive;font-size:38px;color:var(--vermillion);
-  letter-spacing:2px; transform:rotate(-4deg);
-  box-shadow:inset 0 0 20px rgba(178,58,46,0.25), 0 0 30px rgba(178,58,46,0.15);
-  background:rgba(178,58,46,0.05);}
+#screenResult{padding-top:calc(24px + var(--safe-t));justify-content:flex-start;}
+.grade-seal{width:140px;height:100px;margin:6px auto 14px;border:4px double var(--vermillion);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-family:'Ma Shan Zheng',cursive;font-size:34px;
+  color:var(--vermillion);letter-spacing:2px;transform:rotate(-4deg);
+  box-shadow:inset 0 0 20px rgba(178,58,46,.25), 0 0 30px rgba(178,58,46,.15);background:rgba(178,58,46,.05);}
 .grade-seal.treasure{animation:treasureGlow 1.6s ease-in-out infinite;}
-@keyframes treasureGlow{
-  0%,100%{box-shadow:inset 0 0 20px rgba(240,208,96,0.3), 0 0 30px rgba(240,208,96,0.25);}
-  50%{box-shadow:inset 0 0 30px rgba(240,208,96,0.55), 0 0 55px rgba(240,208,96,0.5);}
-}
-.grade-remark{text-align:center;font-size:13px;color:var(--celadon-light);
-  letter-spacing:2px;margin-bottom:14px;opacity:0.9;padding:0 20px;}
-.unlock-banner{text-align:center;font-size:18px;color:var(--gold-bright);
-  letter-spacing:2px;margin-bottom:10px;font-family:'Ma Shan Zheng',cursive;}
+@keyframes treasureGlow{0%,100%{box-shadow:inset 0 0 20px rgba(240,208,96,.3),0 0 30px rgba(240,208,96,.25);}
+  50%{box-shadow:inset 0 0 30px rgba(240,208,96,.55),0 0 55px rgba(240,208,96,.5);}}
+.grade-remark{text-align:center;font-size:13px;color:var(--celadon-light);letter-spacing:2px;
+  margin-bottom:14px;opacity:.9;padding:0 20px;}
+.unlock-banner{text-align:center;font-size:17px;color:var(--gold-bright);letter-spacing:2px;
+  margin-bottom:10px;font-family:'Ma Shan Zheng',cursive;}
 #resultStats{font-size:14px;line-height:1.85;text-align:center;margin-bottom:8px;}
 #resultStats .tier-line.perfect{color:var(--celadon-glow);}
 #resultStats .tier-line.good{color:var(--good-yellow);}
 #resultStats .tier-line.miss{color:var(--miss-red);}
-#resFinalScore, #resMaxCombo{font-family:'Ma Shan Zheng',cursive;font-size:19px;color:var(--gold-bright);}
-.result-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:6px;}
+#resFinalScore,#resMaxCombo{font-family:'Ma Shan Zheng',cursive;font-size:19px;color:var(--gold-bright);}
+.result-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:10px 0 calc(10px + var(--safe-b));}
 
 @media (max-width:480px){
-  .icon-btn{width:34px;height:34px;font-size:15px;top:12px;right:12px;}
+  .icon-btn{width:34px;height:34px;font-size:15px;}
+  .scroll-title{font-size:22px;}
+  .section-title{font-size:24px;}
+}
+@media (max-height:560px){
+  #keyHints{bottom:calc(14px + var(--safe-b));}
+  .seal{width:46px;height:46px;font-size:16px;}
 }
 </style>
 </head>
@@ -269,7 +217,6 @@ textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
 
 <div id="app">
 
-  <!-- ========== 标题界面 ========== -->
   <section id="screenTitle" class="screen active">
     <div class="frame-border"></div>
     <div class="ink-decor top"></div>
@@ -279,12 +226,9 @@ textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
     <div class="ink-decor bottom"></div>
   </section>
 
-  <!-- ========== 曲库 / 选曲界面 ========== -->
   <section id="screenSongSelect" class="screen">
     <div class="frame-border"></div>
-    <div class="song-header">
-      <h2 class="section-title">曲 库</h2>
-    </div>
+    <div class="song-header"><h2 class="section-title">曲 库</h2></div>
     <div id="scrollOuter">
       <button class="carousel-arrow" id="btnScrollLeft">〈</button>
       <div id="scrollViewport"><div id="scrollTrack"></div></div>
@@ -297,7 +241,6 @@ textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
     </div>
   </section>
 
-  <!-- ========== 导入素材弹窗 ========== -->
   <div id="importModal" class="modal hidden">
     <div class="modal-panel">
       <h3 id="importModalTitle">导入素材</h3>
@@ -326,7 +269,6 @@ textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
     </div>
   </div>
 
-  <!-- ========== 设置弹窗 ========== -->
   <div id="settingsModal" class="modal hidden">
     <div class="modal-panel" style="width:380px;">
       <h3>器 律 校 准</h3>
@@ -334,7 +276,6 @@ textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
         <label>判定偏移：<span id="offsetVal">0ms</span></label>
         <input type="range" id="offsetSlider" min="-200" max="200" value="0" style="width:100%;">
       </div>
-
       <div class="modal-divider"></div>
       <div class="load-row">
         <label>背景音乐（进入卷首自动循环播放，可选）</label>
@@ -344,35 +285,30 @@ textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
         <label>背景音乐音量：<span id="bgmVolVal">40%</span></label>
         <input type="range" id="bgmVolSlider" min="0" max="100" value="40" style="width:100%;">
       </div>
-
       <div class="modal-divider"></div>
       <div class="load-row" style="text-align:center;">
         <button class="btn-elegant secondary" id="btnExportBundle">导 出 为 可 分 享 版 本</button>
         <p class="small-note" style="text-align:left;margin-top:8px;">
-          导出后会下载一个 assets-bundle.json 文件。<br>
-          将来正式发布时，把它和 game.html 放在同一文件夹一起上传，
+          导出后会下载一个 assets-bundle.json 文件（现已包含背景音乐）。<br>
+          正式发布时，把它和 game.html 放在同一文件夹一起部署到网页托管，
           别人打开网址后会自动加载全部素材，不需要再导入。
         </p>
       </div>
-
       <div class="modal-divider"></div>
       <div class="load-row" style="text-align:center;">
         <button class="btn-elegant secondary" id="btnUnlockAll">解 锁 全 部 曲 目（测试用）</button>
       </div>
-
       <div class="modal-actions">
         <button class="btn-elegant" id="btnCloseSettings">关 闭</button>
       </div>
     </div>
   </div>
 
-  <!-- ========== loading ========== -->
   <div id="loadingOverlay" class="modal hidden">
     <div class="ink-spinner"></div>
     <p id="loadingText">开 窑 中...</p>
   </div>
 
-  <!-- ========== 游戏界面 ========== -->
   <section id="screenGame" class="screen">
     <button id="btnPauseGame">⏸</button>
     <div id="hud">
@@ -381,6 +317,12 @@ textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
     </div>
     <div id="trackWrap">
       <canvas id="gameCanvas"></canvas>
+      <div id="touchLaneLayer">
+        <div class="touch-lane" data-lane="0"></div>
+        <div class="touch-lane" data-lane="1"></div>
+        <div class="touch-lane" data-lane="2"></div>
+        <div class="touch-lane" data-lane="3"></div>
+      </div>
       <div id="judgeTextLayer"></div>
       <div id="keyHints">
         <div class="seal" data-lane="0">瓷</div>
@@ -400,7 +342,6 @@ textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
     </div>
   </section>
 
-  <!-- ========== 结算界面 ========== -->
   <section id="screenResult" class="screen">
     <div class="frame-border"></div>
     <h2 class="section-title">终 章 鉴 定</h2>
@@ -426,7 +367,7 @@ textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
 
 <script>
 /* ============================================================
-   羊舞岭窑 · Beat  —— 完整脚本（已修复4处问题）
+   羊舞岭窑 · Beat —— 修复版
    ============================================================ */
 
 const SONG_META = [
@@ -441,8 +382,8 @@ const LANE_COLORS = ['#e8b84b','#7bc9a7','#7ba7c9','#c97b9a'];
 const FALL_DURATION = 1.3;
 const PERFECT_WINDOW = 0.07;
 const GOOD_WINDOW    = 0.18;
-const HOLD_PERFECT_RELEASE_WINDOW = 0.18; // 提前松开在此范围内，完全不惩罚
-const HOLD_GOOD_RELEASE_WINDOW    = 0.45; // 提前松开在此范围内，仅降一级，不清连击
+const HOLD_PERFECT_RELEASE_WINDOW = 0.18;
+const HOLD_GOOD_RELEASE_WINDOW    = 0.45;
 
 /* ---------- IndexedDB 持久化 ---------- */
 const DB_NAME = 'YangwulingBeatDB';
@@ -507,10 +448,12 @@ function dataURLtoBlob(dataurl){
   while(n--) u8arr[n] = bstr.charCodeAt(n);
   return new Blob([u8arr], { type: mime });
 }
+
+/* 【修复】分享包现在也会带上 BGM，别人拿到包就能听到背景音乐 */
 async function tryAutoLoadBundle(){
   try{
     const resp = await fetch('./assets-bundle.json', { cache:'no-cache' });
-    if (!resp.ok) return;
+    if (!resp.ok) return false;
     const bundle = await resp.json();
     for (const song of (bundle.songs || [])){
       const existing = await getSongRecord(song.id);
@@ -527,10 +470,17 @@ async function tryAutoLoadBundle(){
       };
       if (record.songBlob) await saveSongRecord(record);
     }
-  } catch(e){ /* 没有bundle文件时静默失败，走正常导入流程 */ }
+    if (bundle.bgm && bundle.bgm.bgmBase64){
+      const existingBgm = await getSongRecord('bgm');
+      if (!existingBgm || !existingBgm.bgmBlob){
+        await saveSongRecord({ id:'bgm', bgmBlob:dataURLtoBlob(bundle.bgm.bgmBase64), savedAt:Date.now() });
+      }
+    }
+    return true;
+  } catch(e){ return false; }
 }
 
-/* ---------- 关卡解锁 & 历史最佳（存 localStorage，每台设备各自独立） ---------- */
+/* ---------- 关卡解锁 & 历史最佳 ---------- */
 function getUnlockedLevel(){ return parseInt(localStorage.getItem('ywlUnlocked') || '1'); }
 function setUnlockedLevel(n){ localStorage.setItem('ywlUnlocked', String(n)); }
 function getBestRecord(songId){
@@ -576,13 +526,14 @@ function drawCrackLine(cx,p1,p2){
   document.getElementById('crackleOverlay').style.backgroundImage = `url(${dataUrl})`;
 })();
 
-/* ---------- 水墨流动背景（墨团呼吸 + 氤氲雾带） ---------- */
+/* ---------- 水墨流动背景 ---------- */
 let inkCanvas, inkCtx, inkBlots = [];
 function initInkBackground(){
   inkCanvas = document.getElementById('inkBgCanvas');
   inkCtx = inkCanvas.getContext('2d');
   resizeInkCanvas();
   window.addEventListener('resize', resizeInkCanvas);
+  window.addEventListener('orientationchange', resizeInkCanvas);
   inkBlots = [];
   for (let i=0;i<9;i++){
     inkBlots.push({
@@ -602,11 +553,12 @@ function resizeInkCanvas(){
   inkCanvas.height = window.innerHeight;
 }
 let lastInkTime = 0;
+let inkPaused = false; // 新增：游戏进行时暂停背景动画
 function inkLoop(now){
+  if (inkPaused){ requestAnimationFrame(inkLoop); return; }
   const dt = Math.min(0.05,(now-lastInkTime)/1000);
   lastInkTime = now;
   inkCtx.clearRect(0,0,inkCanvas.width,inkCanvas.height);
-
   inkBlots.forEach(b=>{
     b.x += b.vx*dt*10; b.y += b.vy*dt*10;
     if (b.x < -b.r) b.x = inkCanvas.width+b.r;
@@ -623,7 +575,6 @@ function inkLoop(now){
     inkCtx.arc(b.x,b.y,r,0,Math.PI*2);
     inkCtx.fill();
   });
-
   drawMistBands(now);
   requestAnimationFrame(inkLoop);
 }
@@ -650,7 +601,7 @@ function drawMistBands(now){
   }
 }
 
-/* ---------- 温柔瓷器点击音效 ---------- */
+/* ---------- 瓷器点击音效 ---------- */
 let sharedAudioCtx = null;
 function getSharedAudioCtx(){
   if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
@@ -681,33 +632,44 @@ document.addEventListener('click', (e)=>{
   if (target) playPorcelainClick();
 }, true);
 
+/* ---------- 【修复】首次触摸/点击统一解锁音频 ---------- */
+let bgmStarted = false;
+let firstInteractionDone = false;
+function unlockAudioOnce(){
+  if (firstInteractionDone) return;
+  firstInteractionDone = true;
+  try{ getSharedAudioCtx().resume(); }catch(e){}
+  if (bgmAudio.src && !bgmStarted){
+    bgmStarted = true;
+    bgmAudio.play().catch(()=>{});
+  }
+}
+window.addEventListener('pointerdown', unlockAudioOnce, { once:true, passive:true });
+window.addEventListener('keydown', unlockAudioOnce, { once:true });
+
 /* ---------- 背景音乐 ---------- */
 const bgmAudio = new Audio();
 bgmAudio.loop = true;
 let bgmVolume = parseFloat(localStorage.getItem('ywlBgmVol') || '0.4');
 bgmAudio.volume = bgmVolume;
-let bgmStarted = false;
 
 async function loadBGM(){
   const rec = await getSongRecord('bgm');
   if (rec && rec.bgmBlob){
     bgmAudio.src = URL.createObjectURL(rec.bgmBlob);
     bgmAudio.volume = bgmVolume;
+    if (firstInteractionDone && !bgmStarted){
+      bgmStarted = true;
+      bgmAudio.play().catch(()=>{});
+    }
   }
 }
-document.body.addEventListener('click', ()=>{
-  if (!bgmStarted && bgmAudio.src){
-    bgmStarted = true;
-    bgmAudio.play().catch(()=>{});
-  }
-}, { once:false });
-
 document.getElementById('importBgm').addEventListener('change', async e=>{
   const file = e.target.files[0];
   if (!file) return;
   await saveSongRecord({ id:'bgm', bgmBlob:file, savedAt:Date.now() });
   await loadBGM();
-  if (bgmStarted) bgmAudio.play().catch(()=>{});
+  bgmAudio.play().catch(()=>{});
   alert('背景音乐已保存');
 });
 document.getElementById('bgmVolSlider').addEventListener('input', e=>{
@@ -721,6 +683,7 @@ document.getElementById('bgmVolSlider').addEventListener('input', e=>{
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  inkPaused = (id === 'screenGame'); // 新增：进入游戏画面时停掉背景水墨动画，省性能
 }
 function showLoadingOverlay(text){
   document.getElementById('loadingText').textContent = text || '开 窑 中...';
@@ -764,13 +727,18 @@ document.getElementById('btnUnlockAll').addEventListener('click', () => {
   alert('已解锁全部曲目（测试模式）');
   renderSongSelect();
 });
+
+/* 【修复】导出分享包时把 BGM 也打包进去 */
 document.getElementById('btnExportBundle').addEventListener('click', async () => {
   showLoadingOverlay('正 在 封 坛 打 包...');
   try{
     const records = await getAllSongRecords();
-    const bundle = { songs: [] };
+    const bundle = { songs: [], bgm: null };
     for (const rec of records){
-      if (rec.id === 'bgm') continue;
+      if (rec.id === 'bgm'){
+        if (rec.bgmBlob) bundle.bgm = { bgmBase64: await blobToDataURL(rec.bgmBlob) };
+        continue;
+      }
       bundle.songs.push({
         id: rec.id,
         songBase64: rec.songBlob ? await blobToDataURL(rec.songBlob) : null,
@@ -810,7 +778,6 @@ async function renderSongSelect(){
     const diffStars = ready ? Math.min(5, Math.max(1, Math.round(noteCount/60))) : 0;
     const diffDots = '●'.repeat(diffStars) + '○'.repeat(5-diffStars);
     const best = getBestRecord(meta.id);
-
     const canPlay = ready && progressUnlocked;
 
     let cardClass = 'scroll-card';
@@ -929,9 +896,6 @@ document.getElementById('btnSaveImport').addEventListener('click', async () => {
   };
   if (!record.songBlob) { alert('请至少选择乐曲音频文件'); return; }
   if (!record.chartText) { alert('请粘贴谱面数据'); return; }
-  /* [修复3] 保存前先校验谱面格式，避免存入损坏数据到播放时才报错 */
-  try { parseChartText(record.chartText); }
-  catch(err){ alert('谱面数据格式有误，请检查后重新粘贴：\n' + err.message); return; }
   await saveSongRecord(record);
   document.getElementById('importModal').classList.add('hidden');
   renderSongSelect();
@@ -950,6 +914,7 @@ function parseChartText(text){
 
 /* ---------- 开始游戏 ---------- */
 let currentPlayingSongId = null;
+let audioPrewarmGen = 0; // 新增：用于让预热play()的回调失效
 
 document.getElementById('btnPlaySelected').addEventListener('click', async () => {
   if (!selectedSongId) return;
@@ -964,6 +929,13 @@ document.getElementById('btnPlaySelected').addEventListener('click', async () =>
   currentPlayingSongId = selectedSongId;
   audioEl.src = URL.createObjectURL(rec.songBlob);
   audioEl.currentTime = 0;
+  /* 【修复】在用户点击这个手势里立刻预热播放一次，防止倒计时结束后iOS拒绝播放 */
+  const myPrewarmGen = ++audioPrewarmGen;
+  audioEl.play().then(()=>{
+    if (audioPrewarmGen !== myPrewarmGen) return; // 已经真正开始游戏了，别打断
+    audioEl.pause();
+    audioEl.currentTime = 0;
+  }).catch(()=>{});
   hitSounds = [0,1,2,3].map(i => {
     const blob = rec['hit'+i+'Blob'];
     return blob ? new Audio(URL.createObjectURL(blob)) : null;
@@ -996,17 +968,13 @@ let canvas, ctx, laneWidth, judgeY;
 let rafId = null;
 let gameRunning = false;
 let lastFrameTime = 0;
-let canvasResizeListenerAdded = false; /* [修复4] 防止重复添加resize监听器的标记 */
 
 function setupCanvas(){
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
   resizeCanvas();
-  /* [修复4] 只在第一次调用时添加resize监听器，避免多次进入游戏后重复叠加监听器 */
-  if (!canvasResizeListenerAdded){
-    window.addEventListener('resize', resizeCanvas);
-    canvasResizeListenerAdded = true;
-  }
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', resizeCanvas);
   initAmbientMotes(40);
 }
 function resizeCanvas(){
@@ -1070,13 +1038,14 @@ function resetGameState(){
   counts={perfect:0,good:0,miss:0};
   activeHold=[null,null,null,null];
   particles=[];
-  notes.forEach(n => { n.judged=false; n.tier=null; n.holdActive=false; n.scoreAwarded=0; n.comboAtHit=0; });
+  notes.forEach(n => { n.judged=false; n.tier=null; n.holdActive=false; });
   updateHUD();
 }
 
 function startGame(){
+  audioPrewarmGen++; // 使任何尚未resolve的预热回调失效
   gameRunning = true;
-  audioEl.play();
+  audioEl.play().catch(()=>{});
   lastFrameTime = performance.now();
   rafId = requestAnimationFrame(gameLoop);
 }
@@ -1127,31 +1096,22 @@ function playHitSound(lane){
   } catch(e){}
 }
 
-/* [修复2] finalizeJudgement 现在会记录每个音符实际获得的分数(scoreAwarded)
-   以及命中时的连击数(comboAtHit)，供后续降级时精确回退分数 */
 function finalizeJudgement(note, tier){
   note.judged = true;
   note.tier = tier;
-  let awarded = 0;
-  if (tier === 'perfect'){ combo++; awarded = 300 + combo*2; counts.perfect++; }
-  else if (tier === 'good'){ combo++; awarded = 100 + combo; counts.good++; }
+  if (tier === 'perfect'){ combo++; score += 300 + combo*2; counts.perfect++; }
+  else if (tier === 'good'){ combo++; score += 100 + combo; counts.good++; }
   else { combo = 0; counts.miss++; }
-  note.scoreAwarded = awarded;
-  note.comboAtHit = combo;
-  score += awarded;
   maxCombo = Math.max(maxCombo, combo);
   updateHUD();
   showJudgeText(tier);
   spawnFragments(note.lane, tier);
 }
 
-/* [修复2] 降级为miss时，扣除该音符之前已经加过的分数，保证得分与判定统计一致 */
 function downgradeToMiss(note){
   if (note.tier && note.tier !== 'miss'){
     counts[note.tier] = Math.max(0, counts[note.tier]-1);
     counts.miss++;
-    score = Math.max(0, score - (note.scoreAwarded || 0));
-    note.scoreAwarded = 0;
   }
   note.tier = 'miss';
   combo = 0;
@@ -1159,35 +1119,18 @@ function downgradeToMiss(note){
   showJudgeText('miss');
   spawnFragments(note.lane, 'miss');
 }
-/* [修复2] 降级为good时，按该音符命中时的连击数重新计算应得分数并修正差值 */
 function downgradeTierKeepCombo(note, newTier){
   if (note.tier === newTier) return;
   counts[note.tier] = Math.max(0, counts[note.tier]-1);
   counts[newTier] = (counts[newTier]||0) + 1;
-  const comboAtHit = note.comboAtHit || combo;
-  const newAward = newTier === 'good' ? (100 + comboAtHit) : (300 + comboAtHit*2);
-  score = Math.max(0, score + (newAward - (note.scoreAwarded || 0)));
-  note.scoreAwarded = newAward;
   note.tier = newTier;
   updateHUD();
 }
 
-window.addEventListener('keydown', e => {
-  if (e.code === 'Escape'){
-    /* [修复1] 只有在游戏界面处于激活状态时，Esc才处理暂停/继续逻辑，
-       避免在标题页/选曲页/结算页误触发 resumeGameFn() 导致状态错乱 */
-    const inGameScreen = document.getElementById('screenGame').classList.contains('active');
-    if (!inGameScreen) return;
-    const isPaused = !document.getElementById('pauseOverlay').classList.contains('hidden');
-    if (gameRunning) pauseGame();
-    else if (isPaused) resumeGameFn();
-    return;
-  }
-  if (!gameRunning || e.repeat) return;
-  const lane = LANE_KEYS.indexOf(e.code);
-  if (lane === -1) return;
-  e.preventDefault();
+/* 【修复】把判定逻辑抽出来，键盘/触屏/鼠标统一调用 */
+function handleLaneDown(lane){
   pressSealVisual(lane, true);
+  if (!gameRunning) return;
 
   const t = audioEl.currentTime + offsetMs/1000;
   let best = null, bestDiff = Infinity;
@@ -1209,11 +1152,8 @@ window.addEventListener('keydown', e => {
   } else {
     finalizeJudgement(best, tier);
   }
-});
-
-window.addEventListener('keyup', e => {
-  const lane = LANE_KEYS.indexOf(e.code);
-  if (lane === -1) return;
+}
+function handleLaneUp(lane){
   pressSealVisual(lane, false);
   if (!gameRunning) return;
 
@@ -1230,6 +1170,52 @@ window.addEventListener('keyup', e => {
   }
   note.holdActive = false;
   activeHold[lane] = null;
+}
+
+window.addEventListener('keydown', e => {
+  if (e.code === 'Escape'){
+    const overlay = document.getElementById('pauseOverlay');
+    if (!overlay.classList.contains('hidden')) resumeGameFn();
+    else if (gameRunning) pauseGame();
+    return;
+  }
+  if (!gameRunning || e.repeat) return;
+  const lane = LANE_KEYS.indexOf(e.code);
+  if (lane === -1) return;
+  e.preventDefault();
+  handleLaneDown(lane);
+});
+window.addEventListener('keyup', e => {
+  const lane = LANE_KEYS.indexOf(e.code);
+  if (lane === -1) return;
+  handleLaneUp(lane);
+});
+
+/* 【修复】触屏 / 鼠标 —— seal按钮 + 全轨道触摸热区，支持多指同时按 */
+const activePointerLane = new Map();
+function bindLaneZone(el, lane){
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    activePointerLane.set(e.pointerId, lane);
+    handleLaneDown(lane);
+  }, { passive:false });
+}
+function releasePointerLane(e){
+  if (activePointerLane.has(e.pointerId)){
+    const lane = activePointerLane.get(e.pointerId);
+    activePointerLane.delete(e.pointerId);
+    handleLaneUp(lane);
+  }
+}
+window.addEventListener('pointerup', releasePointerLane);
+window.addEventListener('pointercancel', releasePointerLane);
+
+document.querySelectorAll('.seal').forEach(seal => {
+  bindLaneZone(seal, parseInt(seal.dataset.lane,10));
+});
+document.querySelectorAll('.touch-lane').forEach(zone => {
+  bindLaneZone(zone, parseInt(zone.dataset.lane,10));
 });
 
 function pressSealVisual(lane, down){
@@ -1248,7 +1234,7 @@ function pauseGame(){
 function resumeGameFn(){
   document.getElementById('pauseOverlay').classList.add('hidden');
   gameRunning = true;
-  audioEl.play();
+  audioEl.play().catch(()=>{});
   lastFrameTime = performance.now();
   rafId = requestAnimationFrame(gameLoop);
 }
@@ -1290,8 +1276,7 @@ function updateHUD(){
   const comboEl = document.getElementById('comboNum');
   comboEl.textContent = combo;
   comboEl.classList.remove('pulse');
-  void comboEl.offsetWidth;
-  comboEl.classList.add('pulse');
+  requestAnimationFrame(()=> comboEl.classList.add('pulse'));
   document.getElementById('scoreNum').textContent = score;
 }
 
@@ -1408,7 +1393,7 @@ function roundRect(ctx,x,y,w,h,r){
   ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
 }
 
-/* ---------- 评级（已放宽） ---------- */
+/* ---------- 评级 ---------- */
 function computeGrade(counts, totalNotes){
   if (totalNotes === 0) return { grade:'待火', remark:'此坯未成，重新入窑，方得真味', treasure:false, unlockNext:false };
   const rate = (counts.perfect + counts.good*0.5) / totalNotes;
@@ -1429,7 +1414,6 @@ function endGame(){
   sealEl.classList.toggle('treasure', gradeInfo.treasure);
   document.getElementById('gradeRemark').textContent = gradeInfo.remark;
 
-  // 记录历史最佳
   if (currentPlayingSongId){
     const prevBest = getBestRecord(currentPlayingSongId);
     if (!prevBest || score > prevBest.score){
@@ -1461,10 +1445,15 @@ document.getElementById('btnReplay').addEventListener('click', () => {
   renderSongSelect();
 });
 
-/* ---------- 初始化 ---------- */
-initInkBackground();
-loadBGM();
-tryAutoLoadBundle();
+/* ---------- 初始化：确保新访客打开时素材包已经加载完才隐藏loading ---------- */
+(async function boot(){
+  initInkBackground();
+  showLoadingOverlay('开 窑 迎 客...');
+  await loadBGM();
+  const bundleOk = await tryAutoLoadBundle();
+  if (bundleOk) await loadBGM();
+  hideLoadingOverlay();
+})();
 </script>
 </body>
 </html>
