@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>羊舞岭窑 · Beat</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
+:root{
+  --bg-deep:#0b1410; --bg-mid:#13221c;
+  --celadon:#8fbfa0; --celadon-light:#c3e0cc; --celadon-glow:#8fe0b0;
+  --gold:#d9b46a; --gold-bright:#f0d060;
+  --vermillion:#b23a2e; --cream:#e8dcc0;
+  --miss-red:#e06a5f; --good-yellow:#f0cf6a;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg-deep);
+  font-family:'Noto Serif SC',serif; color:var(--cream); -webkit-tap-highlight-color:transparent;}
+
+#crackleOverlay{
+  position:fixed; inset:0; z-index:9999; pointer-events:none;
+  background-repeat:repeat; background-size:640px 640px;
+  opacity:0.05; mix-blend-mode:overlay;
+}
+#inkBgCanvas{position:fixed; inset:0; z-index:0; pointer-events:none;}
+
+#app{position:relative;width:100%;height:100%;z-index:1;}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 30%, rgba(19,34,28,0.5) 0%, rgba(11,20,16,0.72) 70%);}
+.screen.active{display:flex;}
+
+.ink-decor{position:absolute;left:0;width:100%;height:160px;opacity:0.35;pointer-events:none;}
+.ink-decor.top{top:0;background:linear-gradient(to bottom, rgba(143,191,160,0.12), transparent);}
+.ink-decor.bottom{bottom:0;
+  background:
+    linear-gradient(to top, rgba(0,0,0,0.5), transparent),
+    radial-gradient(120px 60px at 15% 100%, rgba(143,191,160,0.25), transparent),
+    radial-gradient(180px 80px at 55% 100%, rgba(143,191,160,0.18), transparent),
+    radial-gradient(140px 70px at 85% 100%, rgba(143,191,160,0.22), transparent);
+}
+.frame-border{position:absolute;inset:14px;border:1px solid rgba(217,180,106,0.35);
+  border-radius:4px;pointer-events:none;}
+.frame-border::before{content:'';position:absolute;inset:6px;
+  border:1px solid rgba(217,180,106,0.15);border-radius:2px;}
+
+.brush-title{
+  font-family:'Ma Shan Zheng',cursive;
+  font-size:clamp(40px,9vw,68px);letter-spacing:6px;margin:0;
+  background:linear-gradient(180deg, var(--gold-bright), var(--gold) 60%, #a9803e);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  text-shadow:0 0 30px rgba(217,180,106,0.35);
+  text-align:center;
+}
+.brush-title .dot{color:var(--celadon-light); -webkit-text-fill-color:var(--celadon-light);}
+.subtitle{font-size:clamp(12px,3vw,15px);letter-spacing:8px;color:var(--celadon-light);opacity:0.75;margin:10px 0 40px;text-align:center;}
+.section-title{font-family:'Ma Shan Zheng',cursive;font-size:clamp(26px,6vw,34px);color:var(--gold);margin-bottom:8px;text-align:center;}
+.section-title::after{content:'';display:block;width:70px;height:1px;margin:10px auto 24px;
+  background:linear-gradient(90deg, transparent, var(--gold), transparent);}
+
+.btn-elegant{
+  background:transparent;border:1px solid var(--gold);color:var(--gold-bright);
+  font-family:'Noto Serif SC',serif;font-size:15px;letter-spacing:4px;
+  padding:11px 30px;border-radius:2px;cursor:pointer;position:relative;
+  transition:all 0.25s; margin-top:10px; white-space:nowrap;
+}
+.btn-elegant:hover{background:rgba(217,180,106,0.12);box-shadow:0 0 18px rgba(217,180,106,0.35);}
+.btn-elegant:disabled{opacity:0.35;cursor:not-allowed;}
+.btn-elegant.secondary{border-color:rgba(217,180,106,0.4);color:rgba(217,180,106,0.7);font-size:13px;padding:9px 22px;}
+
+.icon-btn{position:fixed;top:18px;right:18px;z-index:30;
+  width:38px;height:38px;border-radius:50%;
+  border:1px solid rgba(217,180,106,0.4); background:rgba(19,34,28,0.6);
+  color:var(--gold); font-size:17px; cursor:pointer; backdrop-filter:blur(6px);}
+.icon-btn:hover{background:rgba(217,180,106,0.15);}
+
+/* ===== 曲库 / 卷轴 ===== */
+#screenSongSelect{position:relative;padding:10px;}
+.song-header{text-align:center;margin-bottom:4px;}
+#scrollOuter{display:flex;align-items:center;gap:8px;width:100%;justify-content:center;}
+.carousel-arrow{background:transparent;border:none;color:var(--gold);font-size:28px;
+  cursor:pointer;opacity:0.6;transition:opacity 0.2s;flex:0 0 auto;padding:4px 6px;}
+.carousel-arrow:hover{opacity:1;}
+#scrollViewport{width:min(640px, 84vw);max-width:640px;overflow-x:auto;overflow-y:hidden;
+  position:relative;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+#scrollViewport::-webkit-scrollbar{display:none;}
+#scrollTrack{display:flex;gap:min(30px,4vw);padding:26px 10px;perspective:1400px;}
+
+.scroll-card{flex:0 0 min(190px,58vw);scroll-snap-align:center;
+  display:flex;flex-direction:column;align-items:center;transform-style:preserve-3d;
+  cursor:pointer;filter:drop-shadow(0 12px 24px rgba(0,0,0,0.5));transition:transform 0.35s ease;}
+.scroll-card:hover{transform:translateY(-8px) rotateX(4deg);}
+.scroll-card.selected{transform:translateY(-10px) scale(1.035);}
+.scroll-dowel{width:100%;height:15px;border-radius:8px;position:relative;
+  background:
+    linear-gradient(90deg, transparent 38%, rgba(255,255,255,0.28) 50%, transparent 62%),
+    linear-gradient(180deg,#8a5f3a,#3f2a18);
+  box-shadow:0 2px 5px rgba(0,0,0,0.5), inset 0 1px 3px rgba(255,255,255,0.15);}
+.scroll-dowel::before,.scroll-dowel::after{content:'';position:absolute;width:11px;height:25px;
+  border-radius:5px;background:linear-gradient(180deg,#a97a48,#3f2a18);top:-5px;
+  box-shadow:0 0 4px rgba(0,0,0,0.4);}
+.scroll-dowel::before{left:-15px;} .scroll-dowel::after{right:-15px;}
+
+.scroll-paper{width:100%;min-height:250px;position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 25% 10%, rgba(217,180,106,0.14), transparent 55%),
+    radial-gradient(circle at 80% 90%, rgba(143,191,160,0.08), transparent 60%),
+    linear-gradient(175deg,#f0e7d2,#e2d4ac 60%,#dcccA0);
+  border-left:1px solid rgba(0,0,0,0.15);border-right:1px solid rgba(0,0,0,0.15);
+  display:flex;flex-direction:column;align-items:center;padding:16px 8px;
+  color:#3c3222;
+  box-shadow:
+    inset 0 16px 20px -14px rgba(35,26,12,0.5),
+    inset 0 -16px 20px -14px rgba(35,26,12,0.5),
+    inset 0 0 34px rgba(120,95,55,0.14);
+  animation:paperBreathe 6s ease-in-out infinite;
+}
+.scroll-paper::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(105deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 16%, rgba(255,255,255,0) 84%, rgba(255,255,255,0.12) 100%);
+}
+@keyframes paperBreathe{
+  0%,100%{background-position:0 0, 0 0, 0 0;}
+  50%{background-position:6% 3%, -4% -3%, 0 0;}
+}
+.scroll-card.locked .scroll-paper{filter:grayscale(0.55) brightness(0.72);}
+.scroll-card.progress-locked .scroll-paper{filter:grayscale(0.7) brightness(0.55);}
+.scroll-seal{position:absolute;top:9px;right:9px;width:30px;height:30px;border-radius:4px;
+  border:2px solid var(--vermillion);color:var(--vermillion);display:flex;
+  align-items:center;justify-content:center;font-family:'Ma Shan Zheng',cursive;
+  font-size:15px;transform:rotate(-6deg);opacity:0.85;z-index:1;}
+.scroll-card.progress-locked .scroll-seal{border-color:#7a7264;color:#7a7264;}
+.scroll-title{font-family:'Ma Shan Zheng',cursive;font-size:30px;margin:22px 0 2px;letter-spacing:2px;
+  text-shadow:0 0 1px rgba(60,50,34,0.45),1px 1px 3px rgba(60,50,34,0.2);z-index:1;}
+.scroll-pinyin{font-family:'Ma Shan Zheng',cursive;font-size:14px;opacity:0.7;
+  letter-spacing:1.5px;margin-bottom:8px;color:#6b5a3a;font-style:italic;z-index:1;}
+.scroll-diff{color:var(--vermillion);font-size:13px;letter-spacing:3px;margin-bottom:4px;z-index:1;}
+.scroll-best{font-size:10.5px;color:#8a6a30;letter-spacing:1px;margin:2px 0;z-index:1;}
+.scroll-status{font-size:12.5px;letter-spacing:3px;margin-top:auto;text-align:center;padding:0 4px;z-index:1;}
+.scroll-status.ready{color:#3c7a52;}
+.scroll-status.locked{color:#8a7f66;}
+.scroll-status.progress-locked{color:#8a5a52;}
+.scroll-edit{margin-top:6px;font-size:10.5px;background:transparent;z-index:1;
+  border:1px solid rgba(60,50,34,0.35);color:#5c4c30;padding:2px 9px;border-radius:9px;cursor:pointer;}
+.scroll-card.selected .scroll-paper{box-shadow:0 0 0 2px var(--gold-bright),0 0 24px rgba(240,208,96,0.5);}
+
+.song-footer{margin-top:16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+  gap:10px 18px;padding:0 12px;text-align:center;}
+#selectedSongLabel{font-size:13px;color:var(--celadon-light);opacity:0.8;letter-spacing:2px;}
+
+/* ===== 弹窗 ===== */
+.modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  background:rgba(8,13,10,0.55);backdrop-filter:blur(5px);padding:16px;}
+.modal.hidden{display:none;}
+.modal-panel{background:rgba(19,34,28,0.9);border:1px solid rgba(217,180,106,0.4);
+  border-radius:10px;padding:24px 26px;width:400px;max-width:100%;max-height:88vh;overflow-y:auto;
+  box-shadow:0 24px 70px rgba(0,0,0,0.6);backdrop-filter:blur(12px);}
+.modal-panel h3{font-family:'Ma Shan Zheng',cursive;color:var(--gold);text-align:center;
+  margin:0 0 16px;font-size:24px;}
+.load-row{margin-bottom:13px;font-size:12.5px;color:#a89b7d;}
+.load-row label{display:block;margin-bottom:5px;}
+.load-row input[type=file]{width:100%;color:var(--cream);background:#1c1c1c;
+  border:1px solid #444;border-radius:4px;padding:4px 8px;font-size:11px;}
+.hit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+textarea{width:100%;height:90px;background:#141414;color:var(--celadon-light);
+  font-family:monospace;font-size:11px;border:1px solid #444;border-radius:4px;padding:7px;}
+.modal-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:12px;}
+.modal-divider{border-top:1px solid rgba(217,180,106,0.25);margin:16px 0;}
+.small-note{font-size:10.5px;color:#8a7f66;line-height:1.5;margin-top:-4px;margin-bottom:10px;}
+
+#loadingOverlay{flex-direction:column;}
+.ink-spinner{width:54px;height:54px;border-radius:50%;
+  border:3px solid rgba(217,180,106,0.15);border-top-color:var(--gold-bright);
+  animation:spin 0.9s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loadingText{margin-top:16px;color:var(--gold);font-family:'Ma Shan Zheng',cursive;font-size:20px;}
+
+/* ===== 游戏界面 ===== */
+#screenGame{align-items:center;padding:8px;}
+#hud{position:absolute;top:16px;left:0;width:100%;display:flex;justify-content:space-between;
+  padding:0 min(40px,6vw);font-size:14px;color:var(--gold);letter-spacing:2px;z-index:5;}
+#comboNum{font-family:'Ma Shan Zheng',cursive;font-size:clamp(30px,7vw,42px);color:var(--gold-bright);
+  margin-right:8px;text-shadow:0 0 14px rgba(240,208,96,0.5);display:inline-block;transition:transform 0.08s;}
+#comboNum.pulse{transform:scale(1.3);}
+.combo-label{font-size:11px;opacity:0.7;}
+#btnPauseGame{position:absolute;top:12px;left:14px;z-index:6;
+  background:transparent;border:1px solid rgba(217,180,106,0.4);color:var(--gold);
+  border-radius:50%;width:34px;height:34px;font-size:14px;cursor:pointer;}
+#btnPauseGame:hover{background:rgba(217,180,106,0.15);}
+
+#trackWrap{position:relative;width:min(480px,92vw);height:min(75vh,700px);margin-top:max(16px,3vh);}
+#gameCanvas{width:100%;height:100%;display:block;border-radius:6px;
+  box-shadow:0 0 40px rgba(0,0,0,0.5), inset 0 0 60px rgba(143,191,160,0.06);}
+
+#judgeTextLayer{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:6;}
+@keyframes judgePop{
+  0%{opacity:0;transform:translate(-50%,10px) scale(0.75);}
+  15%{opacity:1;transform:translate(-50%,-8px) scale(1.15);}
+  70%{opacity:1;transform:translate(-50%,-28px) scale(1);}
+  100%{opacity:0;transform:translate(-50%,-58px) scale(0.92);}
+}
+.judge-pop{position:absolute;left:50%;top:34%;text-align:center;
+  font-size:clamp(28px,6vw,40px);font-weight:700;font-family:'Ma Shan Zheng',cursive;
+  text-shadow:0 0 16px currentColor;animation:judgePop 0.75s ease-out forwards;}
+.judge-pop.perfect{color:var(--celadon-glow);}
+.judge-pop.good{color:var(--good-yellow);}
+.judge-pop.miss{color:var(--miss-red);}
+.judge-pop .sub{display:block;font-size:11px;letter-spacing:5px;
+  font-family:'Noto Serif SC',serif;opacity:0.75;margin-top:4px;}
+
+#keyHints{position:absolute;left:0;bottom:min(34px,4vh);width:100%;
+  display:flex;justify-content:space-around;padding:0 8px;z-index:5;}
+.seal{width:min(58px,13vw);height:min(58px,13vw);border:3px solid var(--vermillion);color:var(--vermillion);
+  font-family:'Ma Shan Zheng',cursive;font-size:clamp(18px,4vw,26px);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(178,58,46,0.06);box-shadow:inset 0 0 8px rgba(178,58,46,0.3);
+  transition:transform .08s, box-shadow .08s, background .08s;}
+.seal.pressed{transform:scale(0.85);
+  box-shadow:0 0 20px 4px rgba(217,180,106,0.6), inset 0 0 10px rgba(178,58,46,0.5);
+  background:rgba(217,180,106,0.18); border-color:var(--gold-bright); color:var(--gold-bright);}
+
+#pauseOverlay{position:absolute;inset:0;background:rgba(11,20,16,0.9);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;}
+#pauseOverlay.hidden{display:none;}
+#pauseOverlay p{font-family:'Ma Shan Zheng',cursive;font-size:32px;color:var(--gold);margin-bottom:6px;}
+.pause-actions{display:flex;flex-direction:column;gap:14px;margin-top:20px;align-items:center;}
+
+#countdownLayer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  z-index:15;pointer-events:none;}
+.countdown-num{font-family:'Ma Shan Zheng',cursive;font-size:clamp(60px,20vw,120px);color:var(--gold-bright);
+  text-shadow:0 0 40px rgba(217,180,106,0.6); animation:cdPop 0.9s ease-out;}
+@keyframes cdPop{0%{opacity:0;transform:scale(0.5);}30%{opacity:1;transform:scale(1.1);}100%{opacity:0;transform:scale(1);}}
+
+/* ===== 结算 ===== */
+#screenResult{padding:16px;}
+.grade-seal{width:140px;height:100px;margin:0 auto 14px;
+  border:4px double var(--vermillion);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Ma Shan Zheng',cursive;font-size:38px;color:var(--vermillion);
+  letter-spacing:2px; transform:rotate(-4deg);
+  box-shadow:inset 0 0 20px rgba(178,58,46,0.25), 0 0 30px rgba(178,58,46,0.15);
+  background:rgba(178,58,46,0.05);}
+.grade-seal.treasure{animation:treasureGlow 1.6s ease-in-out infinite;}
+@keyframes treasureGlow{
+  0%,100%{box-shadow:inset 0 0 20px rgba(240,208,96,0.3), 0 0 30px rgba(240,208,96,0.25);}
+  50%{box-shadow:inset 0 0 30px rgba(240,208,96,0.55), 0 0 55px rgba(240,208,96,0.5);}
+}
+.grade-remark{text-align:center;font-size:13px;color:var(--celadon-light);
+  letter-spacing:2px;margin-bottom:14px;opacity:0.9;padding:0 20px;}
+.unlock-banner{text-align:center;font-size:18px;color:var(--gold-bright);
+  letter-spacing:2px;margin-bottom:10px;font-family:'Ma Shan Zheng',cursive;}
+#resultStats{font-size:14px;line-height:1.85;text-align:center;margin-bottom:8px;}
+#resultStats .tier-line.perfect{color:var(--celadon-glow);}
+#resultStats .tier-line.good{color:var(--good-yellow);}
+#resultStats .tier-line.miss{color:var(--miss-red);}
+#resFinalScore, #resMaxCombo{font-family:'Ma Shan Zheng',cursive;font-size:19px;color:var(--gold-bright);}
+.result-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:6px;}
+
+@media (max-width:480px){
+  .icon-btn{width:34px;height:34px;font-size:15px;top:12px;right:12px;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="inkBgCanvas"></canvas>
+<div id="crackleOverlay"></div>
+
+<div id="app">
+
+  <!-- ========== 标题界面 ========== -->
+  <section id="screenTitle" class="screen active">
+    <div class="frame-border"></div>
+    <div class="ink-decor top"></div>
+    <h1 class="brush-title">羊舞岭窑<span class="dot"> · </span>Beat</h1>
+    <p class="subtitle">千 年 瓷 韵 ・ 一 敲 一 响</p>
+    <button id="btnGoSongSelect" class="btn-elegant">入 窑</button>
+    <div class="ink-decor bottom"></div>
+  </section>
+
+  <!-- ========== 曲库 / 选曲界面 ========== -->
+  <section id="screenSongSelect" class="screen">
+    <div class="frame-border"></div>
+    <div class="song-header">
+      <h2 class="section-title">曲 库</h2>
+    </div>
+    <div id="scrollOuter">
+      <button class="carousel-arrow" id="btnScrollLeft">〈</button>
+      <div id="scrollViewport"><div id="scrollTrack"></div></div>
+      <button class="carousel-arrow" id="btnScrollRight">〉</button>
+    </div>
+    <div class="song-footer">
+      <button class="btn-elegant secondary" id="btnBackTitle">回 卷 首</button>
+      <span id="selectedSongLabel">尚 未 选 择</span>
+      <button class="btn-elegant" id="btnPlaySelected" disabled>奏 响</button>
+    </div>
+  </section>
+
+  <!-- ========== 导入素材弹窗 ========== -->
+  <div id="importModal" class="modal hidden">
+    <div class="modal-panel">
+      <h3 id="importModalTitle">导入素材</h3>
+      <div class="load-row">
+        <label>乐曲音频</label>
+        <input type="file" id="importSong" accept="audio/*">
+      </div>
+      <div class="load-row hit-grid">
+        <div><label>瓷音一 (D)</label><input type="file" id="importHit0" accept="audio/*"></div>
+        <div><label>瓷音二 (F)</label><input type="file" id="importHit1" accept="audio/*"></div>
+        <div><label>瓷音三 (J)</label><input type="file" id="importHit2" accept="audio/*"></div>
+        <div><label>瓷鼓 (K)</label><input type="file" id="importHit3" accept="audio/*"></div>
+      </div>
+      <div class="load-row" style="text-align:center;">
+        <button class="btn-elegant secondary" id="btnReuseHit">复用《岭上窑光》音效</button>
+      </div>
+      <div class="load-row">
+        <label>谱面数据（粘贴 chart-maker 导出内容，留空则保留原有谱面）</label>
+        <textarea id="importChartText" placeholder="{ t: 1.230, lane: 0, dur: 0 },
+{ t: 1.980, lane: 2, dur: 0.400 }, ..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-elegant secondary" id="btnCancelImport">取 消</button>
+        <button class="btn-elegant" id="btnSaveImport">保 存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 设置弹窗 ========== -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-panel" style="width:380px;">
+      <h3>器 律 校 准</h3>
+      <div class="load-row">
+        <label>判定偏移：<span id="offsetVal">0ms</span></label>
+        <input type="range" id="offsetSlider" min="-200" max="200" value="0" style="width:100%;">
+      </div>
+
+      <div class="modal-divider"></div>
+      <div class="load-row">
+        <label>背景音乐（进入卷首自动循环播放，可选）</label>
+        <input type="file" id="importBgm" accept="audio/*">
+      </div>
+      <div class="load-row">
+        <label>背景音乐音量：<span id="bgmVolVal">40%</span></label>
+        <input type="range" id="bgmVolSlider" min="0" max="100" value="40" style="width:100%;">
+      </div>
+
+      <div class="modal-divider"></div>
+      <div class="load-row" style="text-align:center;">
+        <button class="btn-elegant secondary" id="btnExportBundle">导 出 为 可 分 享 版 本</button>
+        <p class="small-note" style="text-align:left;margin-top:8px;">
+          导出后会下载一个 assets-bundle.json 文件。<br>
+          将来正式发布时，把它和 game.html 放在同一文件夹一起上传，
+          别人打开网址后会自动加载全部素材，不需要再导入。
+        </p>
+      </div>
+
+      <div class="modal-divider"></div>
+      <div class="load-row" style="text-align:center;">
+        <button class="btn-elegant secondary" id="btnUnlockAll">解 锁 全 部 曲 目（测试用）</button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-elegant" id="btnCloseSettings">关 闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== loading ========== -->
+  <div id="loadingOverlay" class="modal hidden">
+    <div class="ink-spinner"></div>
+    <p id="loadingText">开 窑 中...</p>
+  </div>
+
+  <!-- ========== 游戏界面 ========== -->
+  <section id="screenGame" class="screen">
+    <button id="btnPauseGame">⏸</button>
+    <div id="hud">
+      <div id="comboDisplay"><span id="comboNum">0</span><span class="combo-label">连击</span></div>
+      <div id="scoreDisplay">分 <span id="scoreNum">0</span></div>
+    </div>
+    <div id="trackWrap">
+      <canvas id="gameCanvas"></canvas>
+      <div id="judgeTextLayer"></div>
+      <div id="keyHints">
+        <div class="seal" data-lane="0">瓷</div>
+        <div class="seal" data-lane="1">音</div>
+        <div class="seal" data-lane="2">律</div>
+        <div class="seal" data-lane="3">鼓</div>
+      </div>
+      <div id="countdownLayer"></div>
+      <div id="pauseOverlay" class="hidden">
+        <p>已 暂 停</p>
+        <div class="pause-actions">
+          <button id="btnResume" class="btn-elegant">继 续</button>
+          <button id="btnRestartSong" class="btn-elegant secondary">重 新 开 始</button>
+          <button id="btnQuitSong" class="btn-elegant secondary">放 弃 本 曲</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 结算界面 ========== -->
+  <section id="screenResult" class="screen">
+    <div class="frame-border"></div>
+    <h2 class="section-title">终 章 鉴 定</h2>
+    <div class="grade-seal" id="gradeSealChar">上品</div>
+    <p class="grade-remark" id="gradeRemark"></p>
+    <p class="unlock-banner" id="unlockBanner" style="display:none;"></p>
+    <div id="resultStats">
+      <p>最终得分：<span id="resFinalScore">0</span></p>
+      <p>最大连击：<span id="resMaxCombo">0</span></p>
+      <p class="tier-line perfect">完美 · <span id="resPerfect">0</span></p>
+      <p class="tier-line good">尚可 · <span id="resGood">0</span></p>
+      <p class="tier-line miss">错过 · <span id="resMiss">0</span></p>
+    </div>
+    <div class="result-actions">
+      <button class="btn-elegant secondary" id="btnBackTitle2">回 卷 首</button>
+      <button class="btn-elegant" id="btnReplay">再 奏 一 曲</button>
+    </div>
+  </section>
+
+</div>
+
+<button class="icon-btn" id="btnSettings">⚙</button>
+
+<script>
+/* ============================================================
+   羊舞岭窑 · Beat  —— 完整脚本（已修复4处问题）
+   ============================================================ */
+
+const SONG_META = [
+  { id:1, title:'岭上窑光', pinyin:'Lǐng Shàng Yáo Guāng' },
+  { id:2, title:'窑火千年', pinyin:'Yáo Huǒ Qiān Nián' },
+  { id:3, title:'龙窑传',   pinyin:'Lóng Yáo Zhuàn' },
+  { id:4, title:'资水陶痕', pinyin:'Zī Shuǐ Táo Hén' }
+];
+
+const LANE_KEYS   = ['KeyD','KeyF','KeyJ','KeyK'];
+const LANE_COLORS = ['#e8b84b','#7bc9a7','#7ba7c9','#c97b9a'];
+const FALL_DURATION = 1.3;
+const PERFECT_WINDOW = 0.07;
+const GOOD_WINDOW    = 0.18;
+const HOLD_PERFECT_RELEASE_WINDOW = 0.18; // 提前松开在此范围内，完全不惩罚
+const HOLD_GOOD_RELEASE_WINDOW    = 0.45; // 提前松开在此范围内，仅降一级，不清连击
+
+/* ---------- IndexedDB 持久化 ---------- */
+const DB_NAME = 'YangwulingBeatDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'songs';
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e)=>{
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(STORE_NAME)){
+        db.createObjectStore(STORE_NAME, { keyPath:'id' });
+      }
+    };
+    req.onsuccess = (e)=> resolve(e.target.result);
+    req.onerror = (e)=> reject(e);
+  });
+}
+async function saveSongRecord(record){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(STORE_NAME,'readwrite');
+    tx.objectStore(STORE_NAME).put(record);
+    tx.oncomplete = ()=>resolve();
+    tx.onerror = (e)=>reject(e);
+  });
+}
+async function getSongRecord(id){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(STORE_NAME,'readonly');
+    const req = tx.objectStore(STORE_NAME).get(id);
+    req.onsuccess = ()=>resolve(req.result || null);
+    req.onerror = (e)=>reject(e);
+  });
+}
+async function getAllSongRecords(){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(STORE_NAME,'readonly');
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = ()=>resolve(req.result || []);
+    req.onerror = (e)=>reject(e);
+  });
+}
+
+/* ---------- 分享包：Blob <-> Base64 ---------- */
+function blobToDataURL(blob){
+  return new Promise((resolve)=>{
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
+function dataURLtoBlob(dataurl){
+  const arr = dataurl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while(n--) u8arr[n] = bstr.charCodeAt(n);
+  return new Blob([u8arr], { type: mime });
+}
+async function tryAutoLoadBundle(){
+  try{
+    const resp = await fetch('./assets-bundle.json', { cache:'no-cache' });
+    if (!resp.ok) return;
+    const bundle = await resp.json();
+    for (const song of (bundle.songs || [])){
+      const existing = await getSongRecord(song.id);
+      if (existing && existing.songBlob) continue;
+      const record = {
+        id: song.id,
+        songBlob: song.songBase64 ? dataURLtoBlob(song.songBase64) : null,
+        hit0Blob: song.hit0Base64 ? dataURLtoBlob(song.hit0Base64) : null,
+        hit1Blob: song.hit1Base64 ? dataURLtoBlob(song.hit1Base64) : null,
+        hit2Blob: song.hit2Base64 ? dataURLtoBlob(song.hit2Base64) : null,
+        hit3Blob: song.hit3Base64 ? dataURLtoBlob(song.hit3Base64) : null,
+        chartText: song.chartText || '',
+        savedAt: Date.now()
+      };
+      if (record.songBlob) await saveSongRecord(record);
+    }
+  } catch(e){ /* 没有bundle文件时静默失败，走正常导入流程 */ }
+}
+
+/* ---------- 关卡解锁 & 历史最佳（存 localStorage，每台设备各自独立） ---------- */
+function getUnlockedLevel(){ return parseInt(localStorage.getItem('ywlUnlocked') || '1'); }
+function setUnlockedLevel(n){ localStorage.setItem('ywlUnlocked', String(n)); }
+function getBestRecord(songId){
+  const raw = localStorage.getItem('ywlBest_'+songId);
+  return raw ? JSON.parse(raw) : null;
+}
+function setBestRecord(songId, data){
+  localStorage.setItem('ywlBest_'+songId, JSON.stringify(data));
+}
+
+/* ---------- 开片纹理生成 ---------- */
+function generateCrackleTexture(size){
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const cx = c.getContext('2d');
+  const points = [];
+  const numPoints = 34;
+  for(let i=0;i<numPoints;i++) points.push({x:Math.random()*size, y:Math.random()*size});
+  cx.strokeStyle = 'rgba(0,0,0,0.55)';
+  cx.lineWidth = 1;
+  points.forEach((p,i)=>{
+    const others = points
+      .map((q,j)=>({q,j,d:Math.hypot(p.x-q.x,p.y-q.y)}))
+      .filter(o=>o.j!==i).sort((a,b)=>a.d-b.d).slice(0,3);
+    others.forEach(o=>{ if(Math.random()<0.55) drawCrackLine(cx,p,o.q); });
+  });
+  return c.toDataURL();
+}
+function drawCrackLine(cx,p1,p2){
+  const segments = 4;
+  cx.beginPath();
+  cx.moveTo(p1.x,p1.y);
+  for(let s=1;s<=segments;s++){
+    const t=s/segments;
+    const mx = p1.x+(p2.x-p1.x)*t + (Math.random()-0.5)*10;
+    const my = p1.y+(p2.y-p1.y)*t + (Math.random()-0.5)*10;
+    cx.lineTo(mx,my);
+  }
+  cx.stroke();
+}
+(function initCrackle(){
+  const dataUrl = generateCrackleTexture(640);
+  document.getElementById('crackleOverlay').style.backgroundImage = `url(${dataUrl})`;
+})();
+
+/* ---------- 水墨流动背景（墨团呼吸 + 氤氲雾带） ---------- */
+let inkCanvas, inkCtx, inkBlots = [];
+function initInkBackground(){
+  inkCanvas = document.getElementById('inkBgCanvas');
+  inkCtx = inkCanvas.getContext('2d');
+  resizeInkCanvas();
+  window.addEventListener('resize', resizeInkCanvas);
+  inkBlots = [];
+  for (let i=0;i<9;i++){
+    inkBlots.push({
+      x: Math.random()*inkCanvas.width, y: Math.random()*inkCanvas.height,
+      r: 100+Math.random()*180,
+      vx:(Math.random()-0.5)*7, vy:(Math.random()-0.5)*5,
+      hue: Math.random() < 0.55 ? '143,191,160' : '217,180,106',
+      alpha: 0.05+Math.random()*0.06,
+      phase: Math.random()*Math.PI*2
+    });
+  }
+  lastInkTime = performance.now();
+  requestAnimationFrame(inkLoop);
+}
+function resizeInkCanvas(){
+  inkCanvas.width = window.innerWidth;
+  inkCanvas.height = window.innerHeight;
+}
+let lastInkTime = 0;
+function inkLoop(now){
+  const dt = Math.min(0.05,(now-lastInkTime)/1000);
+  lastInkTime = now;
+  inkCtx.clearRect(0,0,inkCanvas.width,inkCanvas.height);
+
+  inkBlots.forEach(b=>{
+    b.x += b.vx*dt*10; b.y += b.vy*dt*10;
+    if (b.x < -b.r) b.x = inkCanvas.width+b.r;
+    if (b.x > inkCanvas.width+b.r) b.x = -b.r;
+    if (b.y < -b.r) b.y = inkCanvas.height+b.r;
+    if (b.y > inkCanvas.height+b.r) b.y = -b.r;
+    const breathe = 1 + Math.sin(now*0.0004 + b.phase)*0.18;
+    const r = b.r*breathe;
+    const g = inkCtx.createRadialGradient(b.x,b.y,0,b.x,b.y,r);
+    g.addColorStop(0, `rgba(${b.hue},${b.alpha})`);
+    g.addColorStop(1, `rgba(${b.hue},0)`);
+    inkCtx.fillStyle = g;
+    inkCtx.beginPath();
+    inkCtx.arc(b.x,b.y,r,0,Math.PI*2);
+    inkCtx.fill();
+  });
+
+  drawMistBands(now);
+  requestAnimationFrame(inkLoop);
+}
+function drawMistBands(now){
+  const bandCount = 4;
+  for (let i=0;i<bandCount;i++){
+    const yBase = inkCanvas.height*(0.12+i*0.24);
+    const amplitude = 24+i*8;
+    const phase = now*0.00012 + i*1.7;
+    inkCtx.beginPath();
+    inkCtx.moveTo(0, yBase);
+    for (let x=0;x<=inkCanvas.width;x+=24){
+      const y = yBase + Math.sin(x*0.0035 + phase)*amplitude;
+      inkCtx.lineTo(x,y);
+    }
+    inkCtx.lineTo(inkCanvas.width, yBase+220);
+    inkCtx.lineTo(0, yBase+220);
+    inkCtx.closePath();
+    const grad = inkCtx.createLinearGradient(0,yBase-amplitude,0,yBase+220);
+    grad.addColorStop(0, `rgba(143,191,160,${0.03+i*0.008})`);
+    grad.addColorStop(1, 'rgba(143,191,160,0)');
+    inkCtx.fillStyle = grad;
+    inkCtx.fill();
+  }
+}
+
+/* ---------- 温柔瓷器点击音效 ---------- */
+let sharedAudioCtx = null;
+function getSharedAudioCtx(){
+  if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return sharedAudioCtx;
+}
+function playPorcelainClick(){
+  try{
+    const ctx = getSharedAudioCtx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, now);
+    filter.frequency.exponentialRampToValueAtTime(700, now+0.32);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(640, now);
+    osc.frequency.exponentialRampToValueAtTime(500, now+0.3);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.15, now+0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+0.45);
+    osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+    osc.start(now); osc.stop(now+0.48);
+  } catch(e){}
+}
+document.addEventListener('click', (e)=>{
+  const target = e.target.closest('.btn-elegant, .icon-btn, .scroll-card, .carousel-arrow, .scroll-edit');
+  if (target) playPorcelainClick();
+}, true);
+
+/* ---------- 背景音乐 ---------- */
+const bgmAudio = new Audio();
+bgmAudio.loop = true;
+let bgmVolume = parseFloat(localStorage.getItem('ywlBgmVol') || '0.4');
+bgmAudio.volume = bgmVolume;
+let bgmStarted = false;
+
+async function loadBGM(){
+  const rec = await getSongRecord('bgm');
+  if (rec && rec.bgmBlob){
+    bgmAudio.src = URL.createObjectURL(rec.bgmBlob);
+    bgmAudio.volume = bgmVolume;
+  }
+}
+document.body.addEventListener('click', ()=>{
+  if (!bgmStarted && bgmAudio.src){
+    bgmStarted = true;
+    bgmAudio.play().catch(()=>{});
+  }
+}, { once:false });
+
+document.getElementById('importBgm').addEventListener('change', async e=>{
+  const file = e.target.files[0];
+  if (!file) return;
+  await saveSongRecord({ id:'bgm', bgmBlob:file, savedAt:Date.now() });
+  await loadBGM();
+  if (bgmStarted) bgmAudio.play().catch(()=>{});
+  alert('背景音乐已保存');
+});
+document.getElementById('bgmVolSlider').addEventListener('input', e=>{
+  bgmVolume = e.target.value/100;
+  bgmAudio.volume = bgmVolume;
+  localStorage.setItem('ywlBgmVol', bgmVolume);
+  document.getElementById('bgmVolVal').textContent = e.target.value+'%';
+});
+
+/* ---------- 界面切换 ---------- */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showLoadingOverlay(text){
+  document.getElementById('loadingText').textContent = text || '开 窑 中...';
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+function hideLoadingOverlay(){
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+document.getElementById('btnGoSongSelect').addEventListener('click', () => {
+  showScreen('screenSongSelect');
+  renderSongSelect();
+});
+document.getElementById('btnBackTitle').addEventListener('click', () => showScreen('screenTitle'));
+document.getElementById('btnBackTitle2').addEventListener('click', () => {
+  if (bgmAudio.src) bgmAudio.play().catch(()=>{});
+  showScreen('screenTitle');
+});
+
+/* ---------- 设置弹窗 ---------- */
+let offsetMs = parseInt(localStorage.getItem('ywlOffset') || '0');
+const offsetSlider = document.getElementById('offsetSlider');
+offsetSlider.value = offsetMs;
+document.getElementById('offsetVal').textContent = offsetMs + 'ms';
+offsetSlider.addEventListener('input', (e) => {
+  offsetMs = parseInt(e.target.value);
+  document.getElementById('offsetVal').textContent = offsetMs + 'ms';
+  localStorage.setItem('ywlOffset', offsetMs);
+});
+document.getElementById('bgmVolSlider').value = Math.round(bgmVolume*100);
+document.getElementById('bgmVolVal').textContent = Math.round(bgmVolume*100)+'%';
+
+document.getElementById('btnSettings').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.remove('hidden');
+});
+document.getElementById('btnCloseSettings').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.add('hidden');
+});
+document.getElementById('btnUnlockAll').addEventListener('click', () => {
+  setUnlockedLevel(SONG_META.length);
+  alert('已解锁全部曲目（测试模式）');
+  renderSongSelect();
+});
+document.getElementById('btnExportBundle').addEventListener('click', async () => {
+  showLoadingOverlay('正 在 封 坛 打 包...');
+  try{
+    const records = await getAllSongRecords();
+    const bundle = { songs: [] };
+    for (const rec of records){
+      if (rec.id === 'bgm') continue;
+      bundle.songs.push({
+        id: rec.id,
+        songBase64: rec.songBlob ? await blobToDataURL(rec.songBlob) : null,
+        hit0Base64: rec.hit0Blob ? await blobToDataURL(rec.hit0Blob) : null,
+        hit1Base64: rec.hit1Blob ? await blobToDataURL(rec.hit1Blob) : null,
+        hit2Base64: rec.hit2Blob ? await blobToDataURL(rec.hit2Blob) : null,
+        hit3Base64: rec.hit3Blob ? await blobToDataURL(rec.hit3Blob) : null,
+        chartText: rec.chartText || ''
+      });
+    }
+    const blob = new Blob([JSON.stringify(bundle)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'assets-bundle.json';
+    document.body.appendChild(a); a.click(); a.remove();
+  } catch(e){ alert('打包失败：'+e.message); }
+  hideLoadingOverlay();
+});
+
+/* ---------- 曲库渲染 ---------- */
+let songRecordsCache = {};
+let selectedSongId = null;
+
+async function renderSongSelect(){
+  const records = await getAllSongRecords();
+  songRecordsCache = {};
+  records.forEach(r => songRecordsCache[r.id] = r);
+  const unlockedLevel = getUnlockedLevel();
+
+  const track = document.getElementById('scrollTrack');
+  track.innerHTML = '';
+  SONG_META.forEach(meta => {
+    const rec = songRecordsCache[meta.id];
+    const ready = !!(rec && rec.songBlob && rec.chartText);
+    const progressUnlocked = meta.id <= unlockedLevel;
+    const noteCount = (rec && rec.chartText) ? (rec.chartText.match(/lane:/g) || []).length : 0;
+    const diffStars = ready ? Math.min(5, Math.max(1, Math.round(noteCount/60))) : 0;
+    const diffDots = '●'.repeat(diffStars) + '○'.repeat(5-diffStars);
+    const best = getBestRecord(meta.id);
+
+    const canPlay = ready && progressUnlocked;
+
+    let cardClass = 'scroll-card';
+    if (!ready) cardClass += ' locked';
+    else if (!progressUnlocked) cardClass += ' progress-locked';
+    if (meta.id === selectedSongId) cardClass += ' selected';
+
+    let sealText, statusHtml, editHtml = '';
+    if (!ready){
+      sealText = '封';
+      statusHtml = `<p class="scroll-status locked">尚 未 入 窑</p>`;
+      editHtml = `<button class="scroll-edit" data-edit="${meta.id}">点击导入</button>`;
+    } else if (!progressUnlocked){
+      sealText = '锁';
+      statusHtml = `<p class="scroll-status progress-locked">精 进 解 锁</p>`;
+    } else {
+      sealText = '鉴';
+      statusHtml = `<div class="scroll-diff">${diffDots}</div>
+        ${best ? `<p class="scroll-best">历史最佳 · ${best.grade} · ${best.score}分</p>` : ''}
+        <p class="scroll-status ready">可 奏</p>`;
+      editHtml = `<button class="scroll-edit" data-edit="${meta.id}">更新素材</button>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = cardClass;
+    card.dataset.id = meta.id;
+    card.innerHTML = `
+      <div class="scroll-dowel"></div>
+      <div class="scroll-paper">
+        <div class="scroll-seal">${sealText}</div>
+        <h3 class="scroll-title">${meta.title}</h3>
+        <p class="scroll-pinyin">${meta.pinyin}</p>
+        ${statusHtml}
+        ${editHtml}
+      </div>
+      <div class="scroll-dowel"></div>
+    `;
+    card.addEventListener('click', (e) => {
+      if (e.target.dataset.edit) return;
+      if (canPlay) selectSongCard(meta.id);
+      else if (!ready) openImportModal(meta.id);
+    });
+    const editBtn = card.querySelector('[data-edit]');
+    if (editBtn){
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openImportModal(meta.id);
+      });
+    }
+    track.appendChild(card);
+  });
+}
+
+function selectSongCard(id){
+  selectedSongId = id;
+  document.querySelectorAll('.scroll-card').forEach(c => {
+    c.classList.toggle('selected', parseInt(c.dataset.id) === id);
+  });
+  const meta = SONG_META.find(m => m.id === id);
+  document.getElementById('selectedSongLabel').textContent = `已 选：《${meta.title}》`;
+  document.getElementById('btnPlaySelected').disabled = false;
+}
+
+document.getElementById('btnScrollLeft').addEventListener('click', () => {
+  document.getElementById('scrollViewport').scrollBy({left:-220, behavior:'smooth'});
+});
+document.getElementById('btnScrollRight').addEventListener('click', () => {
+  document.getElementById('scrollViewport').scrollBy({left:220, behavior:'smooth'});
+});
+
+/* ---------- 导入弹窗 ---------- */
+let importState = { slotId:null, songBlob:null, hitBlobs:[null,null,null,null], chartText:'' };
+
+function openImportModal(slotId){
+  importState = { slotId, songBlob:null, hitBlobs:[null,null,null,null], chartText:'' };
+  const meta = SONG_META.find(m => m.id === slotId);
+  document.getElementById('importModalTitle').textContent = `导入素材 ·《${meta.title}》`;
+  document.getElementById('importChartText').value = '';
+  ['importSong','importHit0','importHit1','importHit2','importHit3'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('importModal').classList.remove('hidden');
+}
+document.getElementById('btnCancelImport').addEventListener('click', () => {
+  document.getElementById('importModal').classList.add('hidden');
+});
+document.getElementById('importSong').addEventListener('change', e => {
+  importState.songBlob = e.target.files[0] || null;
+});
+[0,1,2,3].forEach(i => {
+  document.getElementById('importHit'+i).addEventListener('change', e => {
+    importState.hitBlobs[i] = e.target.files[0] || null;
+  });
+});
+document.getElementById('importChartText').addEventListener('input', e => {
+  importState.chartText = e.target.value;
+});
+document.getElementById('btnReuseHit').addEventListener('click', async () => {
+  const rec = await getSongRecord(1);
+  if (!rec || !rec.hit0Blob) { alert('《岭上窑光》尚未导入音效，无法复用'); return; }
+  importState.hitBlobs = [rec.hit0Blob, rec.hit1Blob, rec.hit2Blob, rec.hit3Blob];
+  alert('已复用《岭上窑光》的瓷音音效，可直接保存');
+});
+
+document.getElementById('btnSaveImport').addEventListener('click', async () => {
+  const existing = await getSongRecord(importState.slotId) || {};
+  const record = {
+    id: importState.slotId,
+    songBlob: importState.songBlob || existing.songBlob || null,
+    hit0Blob: importState.hitBlobs[0] || existing.hit0Blob || null,
+    hit1Blob: importState.hitBlobs[1] || existing.hit1Blob || null,
+    hit2Blob: importState.hitBlobs[2] || existing.hit2Blob || null,
+    hit3Blob: importState.hitBlobs[3] || existing.hit3Blob || null,
+    chartText: importState.chartText.trim() || existing.chartText || '',
+    savedAt: Date.now()
+  };
+  if (!record.songBlob) { alert('请至少选择乐曲音频文件'); return; }
+  if (!record.chartText) { alert('请粘贴谱面数据'); return; }
+  /* [修复3] 保存前先校验谱面格式，避免存入损坏数据到播放时才报错 */
+  try { parseChartText(record.chartText); }
+  catch(err){ alert('谱面数据格式有误，请检查后重新粘贴：\n' + err.message); return; }
+  await saveSongRecord(record);
+  document.getElementById('importModal').classList.add('hidden');
+  renderSongSelect();
+});
+
+/* ---------- 谱面解析 ---------- */
+function parseChartText(text){
+  const trimmed = text.trim().replace(/,\s*$/, '');
+  const wrapped = '[' + trimmed + ']';
+  const arr = Function('"use strict"; return (' + wrapped + ');')();
+  return arr.map(n => ({
+    t:n.t, lane:n.lane, dur:n.dur || 0,
+    judged:false, tier:null, holdActive:false
+  })).sort((a,b) => a.t - b.t);
+}
+
+/* ---------- 开始游戏 ---------- */
+let currentPlayingSongId = null;
+
+document.getElementById('btnPlaySelected').addEventListener('click', async () => {
+  if (!selectedSongId) return;
+  showLoadingOverlay('开 窑 中...');
+  const rec = await getSongRecord(selectedSongId);
+  if (!rec || !rec.songBlob || !rec.chartText) {
+    hideLoadingOverlay(); alert('素材不完整'); return;
+  }
+  try { notes = parseChartText(rec.chartText); }
+  catch(err){ hideLoadingOverlay(); alert('谱面数据解析失败'); return; }
+
+  currentPlayingSongId = selectedSongId;
+  audioEl.src = URL.createObjectURL(rec.songBlob);
+  audioEl.currentTime = 0;
+  hitSounds = [0,1,2,3].map(i => {
+    const blob = rec['hit'+i+'Blob'];
+    return blob ? new Audio(URL.createObjectURL(blob)) : null;
+  });
+
+  bgmAudio.pause();
+  hideLoadingOverlay();
+  showScreen('screenGame');
+  setupCanvas();
+  resetGameState();
+  runCountdown(() => startGame());
+});
+
+/* ============================================================
+   游戏核心逻辑
+   ============================================================ */
+
+let notes = [];
+let activeHold = [null,null,null,null];
+let combo = 0, maxCombo = 0, score = 0;
+let counts = { perfect:0, good:0, miss:0 };
+
+let audioEl = new Audio();
+let hitSounds = [null,null,null,null];
+
+let particles = [];
+let ambientMotes = [];
+
+let canvas, ctx, laneWidth, judgeY;
+let rafId = null;
+let gameRunning = false;
+let lastFrameTime = 0;
+let canvasResizeListenerAdded = false; /* [修复4] 防止重复添加resize监听器的标记 */
+
+function setupCanvas(){
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  /* [修复4] 只在第一次调用时添加resize监听器，避免多次进入游戏后重复叠加监听器 */
+  if (!canvasResizeListenerAdded){
+    window.addEventListener('resize', resizeCanvas);
+    canvasResizeListenerAdded = true;
+  }
+  initAmbientMotes(40);
+}
+function resizeCanvas(){
+  const wrap = document.getElementById('trackWrap');
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  laneWidth = canvas.width / 4;
+  judgeY = canvas.height - Math.min(130, canvas.height*0.2);
+}
+function laneCenterX(lane){ return laneWidth * lane + laneWidth/2; }
+
+function initAmbientMotes(count){
+  ambientMotes = [];
+  for (let i=0;i<count;i++){
+    ambientMotes.push({
+      x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+      r: 1 + Math.random()*2.2, vy: -(8 + Math.random()*14),
+      alpha: 0.15 + Math.random()*0.3,
+      hue: Math.random() < 0.5 ? '143,191,160' : '217,180,106'
+    });
+  }
+}
+function updateAmbientMotes(dt){
+  ambientMotes.forEach(m => {
+    m.y += m.vy*dt;
+    if (m.y < -10) { m.y = canvas.height+10; m.x = Math.random()*canvas.width; }
+  });
+}
+function drawAmbientMotes(){
+  ambientMotes.forEach(m => {
+    const g = ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,m.r*4);
+    g.addColorStop(0, `rgba(${m.hue},${m.alpha})`);
+    g.addColorStop(1, `rgba(${m.hue},0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(m.x,m.y,m.r*4,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function runCountdown(callback){
+  const layer = document.getElementById('countdownLayer');
+  const seq = ['预备','三','二','一','起'];
+  let idx = 0;
+  function step(){
+    layer.innerHTML = '';
+    if (idx >= seq.length){ callback(); return; }
+    const div = document.createElement('div');
+    div.className = 'countdown-num';
+    div.textContent = seq[idx];
+    div.style.fontSize = (idx===0 || idx===seq.length-1) ? '52px' : '';
+    layer.appendChild(div);
+    idx++;
+    setTimeout(step, 550);
+  }
+  step();
+}
+
+function resetGameState(){
+  combo=0; maxCombo=0; score=0;
+  counts={perfect:0,good:0,miss:0};
+  activeHold=[null,null,null,null];
+  particles=[];
+  notes.forEach(n => { n.judged=false; n.tier=null; n.holdActive=false; n.scoreAwarded=0; n.comboAtHit=0; });
+  updateHUD();
+}
+
+function startGame(){
+  gameRunning = true;
+  audioEl.play();
+  lastFrameTime = performance.now();
+  rafId = requestAnimationFrame(gameLoop);
+}
+
+function gameLoop(now){
+  if (!gameRunning) return;
+  const dt = Math.min(0.05, (now - lastFrameTime)/1000);
+  lastFrameTime = now;
+
+  const t = audioEl.currentTime;
+  updateAmbientMotes(dt);
+  autoMissCheck(t);
+  updateParticles(dt);
+  render(t);
+
+  if (audioEl.ended) { endGame(); return; }
+  rafId = requestAnimationFrame(gameLoop);
+}
+
+function autoMissCheck(t){
+  notes.forEach(n => {
+    if (n.holdActive){
+      if (t > n.t + n.dur + 0.05){
+        n.holdActive = false;
+        if (activeHold[n.lane] === n) activeHold[n.lane] = null;
+      }
+      return;
+    }
+    if (n.judged) return;
+    if (t > n.t + GOOD_WINDOW) finalizeJudgement(n, 'miss');
+  });
+}
+
+function diffToTier(diff){
+  const a = Math.abs(diff);
+  if (a <= PERFECT_WINDOW) return 'perfect';
+  if (a <= GOOD_WINDOW) return 'good';
+  return 'miss';
+}
+
+function playHitSound(lane){
+  const base = hitSounds[lane];
+  if (!base) return;
+  try{
+    const clone = base.cloneNode();
+    clone.volume = 1.0;
+    clone.play().catch(()=>{});
+  } catch(e){}
+}
+
+/* [修复2] finalizeJudgement 现在会记录每个音符实际获得的分数(scoreAwarded)
+   以及命中时的连击数(comboAtHit)，供后续降级时精确回退分数 */
+function finalizeJudgement(note, tier){
+  note.judged = true;
+  note.tier = tier;
+  let awarded = 0;
+  if (tier === 'perfect'){ combo++; awarded = 300 + combo*2; counts.perfect++; }
+  else if (tier === 'good'){ combo++; awarded = 100 + combo; counts.good++; }
+  else { combo = 0; counts.miss++; }
+  note.scoreAwarded = awarded;
+  note.comboAtHit = combo;
+  score += awarded;
+  maxCombo = Math.max(maxCombo, combo);
+  updateHUD();
+  showJudgeText(tier);
+  spawnFragments(note.lane, tier);
+}
+
+/* [修复2] 降级为miss时，扣除该音符之前已经加过的分数，保证得分与判定统计一致 */
+function downgradeToMiss(note){
+  if (note.tier && note.tier !== 'miss'){
+    counts[note.tier] = Math.max(0, counts[note.tier]-1);
+    counts.miss++;
+    score = Math.max(0, score - (note.scoreAwarded || 0));
+    note.scoreAwarded = 0;
+  }
+  note.tier = 'miss';
+  combo = 0;
+  updateHUD();
+  showJudgeText('miss');
+  spawnFragments(note.lane, 'miss');
+}
+/* [修复2] 降级为good时，按该音符命中时的连击数重新计算应得分数并修正差值 */
+function downgradeTierKeepCombo(note, newTier){
+  if (note.tier === newTier) return;
+  counts[note.tier] = Math.max(0, counts[note.tier]-1);
+  counts[newTier] = (counts[newTier]||0) + 1;
+  const comboAtHit = note.comboAtHit || combo;
+  const newAward = newTier === 'good' ? (100 + comboAtHit) : (300 + comboAtHit*2);
+  score = Math.max(0, score + (newAward - (note.scoreAwarded || 0)));
+  note.scoreAwarded = newAward;
+  note.tier = newTier;
+  updateHUD();
+}
+
+window.addEventListener('keydown', e => {
+  if (e.code === 'Escape'){
+    /* [修复1] 只有在游戏界面处于激活状态时，Esc才处理暂停/继续逻辑，
+       避免在标题页/选曲页/结算页误触发 resumeGameFn() 导致状态错乱 */
+    const inGameScreen = document.getElementById('screenGame').classList.contains('active');
+    if (!inGameScreen) return;
+    const isPaused = !document.getElementById('pauseOverlay').classList.contains('hidden');
+    if (gameRunning) pauseGame();
+    else if (isPaused) resumeGameFn();
+    return;
+  }
+  if (!gameRunning || e.repeat) return;
+  const lane = LANE_KEYS.indexOf(e.code);
+  if (lane === -1) return;
+  e.preventDefault();
+  pressSealVisual(lane, true);
+
+  const t = audioEl.currentTime + offsetMs/1000;
+  let best = null, bestDiff = Infinity;
+  notes.forEach(n => {
+    if (n.judged || n.lane !== lane) return;
+    const diff = Math.abs(n.t - t);
+    if (diff <= GOOD_WINDOW && diff < bestDiff){ best = n; bestDiff = diff; }
+  });
+  if (!best) return;
+
+  const diff = t - best.t;
+  const tier = diffToTier(diff);
+  playHitSound(lane);
+
+  if (best.dur > 0){
+    best.holdActive = true;
+    activeHold[lane] = best;
+    finalizeJudgement(best, tier);
+  } else {
+    finalizeJudgement(best, tier);
+  }
+});
+
+window.addEventListener('keyup', e => {
+  const lane = LANE_KEYS.indexOf(e.code);
+  if (lane === -1) return;
+  pressSealVisual(lane, false);
+  if (!gameRunning) return;
+
+  const note = activeHold[lane];
+  if (!note) return;
+  const t = audioEl.currentTime + offsetMs/1000;
+  const expectedEnd = note.t + note.dur;
+  const earlyBy = expectedEnd - t;
+
+  if (earlyBy > HOLD_GOOD_RELEASE_WINDOW){
+    downgradeToMiss(note);
+  } else if (earlyBy > HOLD_PERFECT_RELEASE_WINDOW && note.tier === 'perfect'){
+    downgradeTierKeepCombo(note, 'good');
+  }
+  note.holdActive = false;
+  activeHold[lane] = null;
+});
+
+function pressSealVisual(lane, down){
+  const seal = document.querySelector(`.seal[data-lane="${lane}"]`);
+  if (seal) seal.classList.toggle('pressed', down);
+}
+
+/* ---------- 暂停 / 重新开始 / 放弃 ---------- */
+function pauseGame(){
+  if (audioEl.paused) return;
+  document.getElementById('pauseOverlay').classList.remove('hidden');
+  audioEl.pause();
+  cancelAnimationFrame(rafId);
+  gameRunning = false;
+}
+function resumeGameFn(){
+  document.getElementById('pauseOverlay').classList.add('hidden');
+  gameRunning = true;
+  audioEl.play();
+  lastFrameTime = performance.now();
+  rafId = requestAnimationFrame(gameLoop);
+}
+function restartSong(){
+  document.getElementById('pauseOverlay').classList.add('hidden');
+  cancelAnimationFrame(rafId);
+  audioEl.pause();
+  audioEl.currentTime = 0;
+  resetGameState();
+  runCountdown(() => startGame());
+}
+function quitSong(){
+  if (!confirm('确定要放弃本曲吗？本次成绩不会被记录。')) return;
+  document.getElementById('pauseOverlay').classList.add('hidden');
+  gameRunning = false;
+  cancelAnimationFrame(rafId);
+  audioEl.pause();
+  if (bgmAudio.src) bgmAudio.play().catch(()=>{});
+  showScreen('screenSongSelect');
+  renderSongSelect();
+}
+document.getElementById('btnPauseGame').addEventListener('click', pauseGame);
+document.getElementById('btnResume').addEventListener('click', resumeGameFn);
+document.getElementById('btnRestartSong').addEventListener('click', restartSong);
+document.getElementById('btnQuitSong').addEventListener('click', quitSong);
+
+function showJudgeText(tier){
+  const layer = document.getElementById('judgeTextLayer');
+  const div = document.createElement('div');
+  div.className = 'judge-pop ' + tier;
+  const map = { perfect:['完 美','PERFECT'], good:['尚 可','GOOD'], miss:['错 过','MISS'] };
+  const [cn, en] = map[tier];
+  div.innerHTML = cn + '<span class="sub">'+en+'</span>';
+  layer.appendChild(div);
+  setTimeout(() => div.remove(), 780);
+}
+
+function updateHUD(){
+  const comboEl = document.getElementById('comboNum');
+  comboEl.textContent = combo;
+  comboEl.classList.remove('pulse');
+  void comboEl.offsetWidth;
+  comboEl.classList.add('pulse');
+  document.getElementById('scoreNum').textContent = score;
+}
+
+function spawnFragments(lane, tier){
+  const x = laneCenterX(lane), y = judgeY;
+  const count = tier==='perfect' ? 14 : tier==='good' ? 10 : 8;
+  const kintsugi = tier !== 'miss';
+  const palettes = {
+    perfect:['#8fe0b0','#c3e0cc','#d9b46a'],
+    good:['#f0d060','#e8b84b','#c9a227'],
+    miss:['#7a6a62','#8a5a52','#5c4a44']
+  };
+  const colors = palettes[tier];
+  for (let i=0;i<count;i++){
+    const angle = tier==='miss' ? Math.random()*Math.PI*2 : (-Math.PI/2)+(Math.random()-0.5)*1.8;
+    const speed = tier==='miss' ? 60+Math.random()*120 : 40+Math.random()*90;
+    particles.push({
+      x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed - (tier==='miss'?0:60),
+      gravity: tier==='miss' ? 480 : 90, size: 5+Math.random()*7,
+      rot: Math.random()*Math.PI*2, vr:(Math.random()-0.5)*6,
+      color: colors[Math.floor(Math.random()*colors.length)], kintsugi,
+      life: 0.6+Math.random()*0.5, maxLife: 0.6+Math.random()*0.5, alpha:1
+    });
+  }
+}
+function updateParticles(dt){
+  for (let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.vy += p.gravity*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.rot += p.vr*dt;
+    p.life -= dt; p.alpha = Math.max(0, p.life/p.maxLife);
+    if (p.life <= 0) particles.splice(i,1);
+  }
+}
+function drawParticles(){
+  particles.forEach(p => {
+    ctx.save();
+    ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.globalAlpha = p.alpha;
+    ctx.beginPath();
+    const s = p.size;
+    ctx.moveTo(-s*0.5,-s*0.6); ctx.lineTo(s*0.7,-s*0.2); ctx.lineTo(s*0.4,s*0.6); ctx.lineTo(-s*0.6,s*0.3);
+    ctx.closePath();
+    ctx.fillStyle = p.color; ctx.fill();
+    if (p.kintsugi){
+      ctx.strokeStyle = 'rgba(240,208,96,0.9)'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(-s*0.2,-s*0.3); ctx.lineTo(s*0.3,s*0.2); ctx.stroke();
+    }
+    ctx.restore();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function render(t){
+  ctx.fillStyle = 'rgba(11,20,16,0.32)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  drawAmbientMotes();
+
+  for (let i=1;i<4;i++){
+    ctx.strokeStyle = 'rgba(217,180,106,0.12)';
+    ctx.beginPath(); ctx.moveTo(laneWidth*i,0); ctx.lineTo(laneWidth*i,canvas.height); ctx.stroke();
+  }
+
+  const jg = ctx.createLinearGradient(0,judgeY-2,0,judgeY+2);
+  jg.addColorStop(0,'rgba(217,180,106,0)');
+  jg.addColorStop(0.5,'rgba(240,208,96,0.9)');
+  jg.addColorStop(1,'rgba(217,180,106,0)');
+  ctx.fillStyle = jg;
+  ctx.fillRect(0,judgeY-2,canvas.width,4);
+
+  notes.forEach(n => {
+    if (n.judged && !n.holdActive) return;
+
+    let headY, tailY;
+    if (n.holdActive){
+      headY = judgeY;
+      tailY = n.dur > 0 ? judgeY - ((n.t + n.dur - t)/FALL_DURATION) * judgeY : judgeY;
+    } else {
+      headY = judgeY - ((n.t - t)/FALL_DURATION) * judgeY;
+      tailY = n.dur > 0 ? judgeY - ((n.t + n.dur - t)/FALL_DURATION) * judgeY : headY;
+    }
+
+    const topMost = Math.min(headY, tailY), bottomMost = Math.max(headY, tailY);
+    if (bottomMost < -40 || topMost > canvas.height+40) return;
+
+    const cx = laneCenterX(n.lane);
+    const color = LANE_COLORS[n.lane];
+
+    if (n.dur > 0){
+      const top = Math.min(headY, tailY), bottom = Math.max(headY, tailY);
+      ctx.fillStyle = color + (n.holdActive ? 'aa' : '55');
+      ctx.strokeStyle = color; ctx.lineWidth = n.holdActive ? 3 : 2;
+      if (n.holdActive){ ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 14; }
+      roundRect(ctx, cx-laneWidth*0.18, top, laneWidth*0.36, bottom-top, 8);
+      ctx.fill(); ctx.stroke();
+      if (n.holdActive) ctx.restore();
+    }
+    drawNoteHead(cx, headY, color);
+  });
+
+  drawParticles();
+}
+
+function drawNoteHead(cx, cy, color){
+  const w = laneWidth*0.62, h = 26;
+  ctx.save(); ctx.translate(cx,cy);
+  const grad = ctx.createLinearGradient(-w/2,0,w/2,0);
+  grad.addColorStop(0, color+'cc'); grad.addColorStop(0.5,'#f5efe0'); grad.addColorStop(1, color+'cc');
+  ctx.fillStyle = grad; ctx.strokeStyle = '#d9b46a'; ctx.lineWidth = 1.5;
+  roundRect(ctx, -w/2, -h/2, w, h, 8);
+  ctx.fill(); ctx.stroke(); ctx.restore();
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath(); ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ---------- 评级（已放宽） ---------- */
+function computeGrade(counts, totalNotes){
+  if (totalNotes === 0) return { grade:'待火', remark:'此坯未成，重新入窑，方得真味', treasure:false, unlockNext:false };
+  const rate = (counts.perfect + counts.good*0.5) / totalNotes;
+  if (counts.miss === 0 && rate >= 0.95) return { grade:'珍品', remark:'鬼工天成，浑然天工，此乃窑中至宝', treasure:true, unlockNext:true };
+  if (rate >= 0.80) return { grade:'上品', remark:'温润如玉，火候恰好，堪为上品', treasure:false, unlockNext:true };
+  if (rate >= 0.60) return { grade:'中品', remark:'釜火尚可，略有瑕疵，仍值雅赏', treasure:false, unlockNext:true };
+  if (rate >= 0.35) return { grade:'下品', remark:'窑变未成，火候欠佳，尚需精进', treasure:false, unlockNext:false };
+  return { grade:'待火', remark:'此坯未成，重新入窑，方得真味', treasure:false, unlockNext:false };
+}
+
+function endGame(){
+  gameRunning = false;
+  cancelAnimationFrame(rafId);
+
+  const gradeInfo = computeGrade(counts, notes.length);
+  const sealEl = document.getElementById('gradeSealChar');
+  sealEl.textContent = gradeInfo.grade;
+  sealEl.classList.toggle('treasure', gradeInfo.treasure);
+  document.getElementById('gradeRemark').textContent = gradeInfo.remark;
+
+  // 记录历史最佳
+  if (currentPlayingSongId){
+    const prevBest = getBestRecord(currentPlayingSongId);
+    if (!prevBest || score > prevBest.score){
+      setBestRecord(currentPlayingSongId, { grade: gradeInfo.grade, score, maxCombo, date: Date.now() });
+    }
+  }
+
+  const banner = document.getElementById('unlockBanner');
+  banner.style.display = 'none';
+  if (gradeInfo.unlockNext && currentPlayingSongId){
+    const unlockedLevel = getUnlockedLevel();
+    if (currentPlayingSongId === unlockedLevel && unlockedLevel < SONG_META.length){
+      setUnlockedLevel(unlockedLevel + 1);
+      const nextMeta = SONG_META[unlockedLevel];
+      banner.textContent = `《${nextMeta.title}》已 开 窑`;
+      banner.style.display = 'block';
+    }
+  }
+
+  document.getElementById('resFinalScore').textContent = score;
+  document.getElementById('resMaxCombo').textContent = maxCombo;
+  document.getElementById('resPerfect').textContent = counts.perfect;
+  document.getElementById('resGood').textContent = counts.good;
+  document.getElementById('resMiss').textContent = counts.miss;
+  showScreen('screenResult');
+}
+document.getElementById('btnReplay').addEventListener('click', () => {
+  showScreen('screenSongSelect');
+  renderSongSelect();
+});
+
+/* ---------- 初始化 ---------- */
+initInkBackground();
+loadBGM();
+tryAutoLoadBundle();
+</script>
+</body>
+</html>
