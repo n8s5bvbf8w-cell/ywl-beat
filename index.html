@@ -840,7 +840,7 @@ async function renderSongSelect(){
     card.addEventListener('click', (e) => {
       if (e.target.dataset.edit) return;
       if (canPlay) selectSongCard(meta.id);
-      else if (!ready) openImportModal(meta.id);
+      else if (!ready && progressUnlocked) openImportModal(meta.id);
     });
     const editBtn = card.querySelector('[data-edit]');
     if (editBtn){
