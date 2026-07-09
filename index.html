@@ -449,35 +449,57 @@ function dataURLtoBlob(dataurl){
   return new Blob([u8arr], { type: mime });
 }
 
-/* 【修复】分享包现在也会带上 BGM，别人拿到包就能听到背景音乐 */
+/* 【修复】直接读取mp3+txt文件，不再依赖巨大的assets-bundle.json */
+async function loadSharedHitSounds(){
+  const paths = ['./hit0.mp3','./hit1.mp3','./hit2.mp3','./hit3.mp3'];
+  return Promise.all(paths.map(async p=>{
+    try{
+      const r = await fetch(p);
+      return r.ok ? await r.blob() : null;
+    }catch(e){ return null; }
+  }));
+}
+
+async function loadSongFromFiles(meta, hitBlobs){
+  try{
+    const existing = await getSongRecord(meta.id);
+    if (existing && existing.songBlob) return true;
+    const songResp = await fetch(`./song${meta.id}.mp3`);
+    if (!songResp.ok) return false;
+    const songBlob = await songResp.blob();
+    const txtResp = await fetch(`./song${meta.id}.txt`);
+    const chartText = txtResp.ok ? await txtResp.text() : '';
+    const record = {
+      id: meta.id,
+      songBlob,
+      hit0Blob: hitBlobs[0],
+      hit1Blob: hitBlobs[1],
+      hit2Blob: hitBlobs[2],
+      hit3Blob: hitBlobs[3],
+      chartText,
+      savedAt: Date.now()
+    };
+    await saveSongRecord(record);
+    return true;
+  }catch(e){ return false; }
+}
+
 async function tryAutoLoadBundle(){
   try{
-    const resp = await fetch('./assets-bundle.json', { cache:'no-cache' });
-    if (!resp.ok) return false;
-    const bundle = await resp.json();
-    for (const song of (bundle.songs || [])){
-      const existing = await getSongRecord(song.id);
-      if (existing && existing.songBlob) continue;
-      const record = {
-        id: song.id,
-        songBlob: song.songBase64 ? dataURLtoBlob(song.songBase64) : null,
-        hit0Blob: song.hit0Base64 ? dataURLtoBlob(song.hit0Base64) : null,
-        hit1Blob: song.hit1Base64 ? dataURLtoBlob(song.hit1Base64) : null,
-        hit2Blob: song.hit2Base64 ? dataURLtoBlob(song.hit2Base64) : null,
-        hit3Blob: song.hit3Base64 ? dataURLtoBlob(song.hit3Base64) : null,
-        chartText: song.chartText || '',
-        savedAt: Date.now()
-      };
-      if (record.songBlob) await saveSongRecord(record);
-    }
-    if (bundle.bgm && bundle.bgm.bgmBase64){
-      const existingBgm = await getSongRecord('bgm');
-      if (!existingBgm || !existingBgm.bgmBlob){
-        await saveSongRecord({ id:'bgm', bgmBlob:dataURLtoBlob(bundle.bgm.bgmBase64), savedAt:Date.now() });
+    const hitBlobs = await loadSharedHitSounds();
+    const firstMeta = SONG_META[0]; // 岭上窑光，优先加载，保证能立刻开始玩
+    await loadSongFromFiles(firstMeta, hitBlobs);
+
+    /* 剩下3首歌在后台悄悄加载，不阻塞界面 */
+    (async ()=>{
+      for (const meta of SONG_META.slice(1)){
+        await loadSongFromFiles(meta, hitBlobs);
       }
-    }
+      try{ await renderSongSelect(); }catch(e){}
+    })();
+
     return true;
-  } catch(e){ return false; }
+  }catch(e){ return false; }
 }
 
 /* ---------- 关卡解锁 & 历史最佳 ---------- */
