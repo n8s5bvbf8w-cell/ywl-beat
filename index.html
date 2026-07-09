@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0b1410">
+<meta name="theme-color" content="#1f130d">
 <title>羊舞岭窑 · Beat</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg-deep:#0b1410; --bg-deep2:#0f1c16;
-  --celadon:#7bc9a7; --celadon-light:#a8dbc0; --celadon-glow:#8fe0b0;
+  --bg-deep:#1f130d; --bg-deep2:#2b1b12;
+  --celadon:#d99a75; --celadon-light:#e8c3a3; --celadon-glow:#f0b98a;
   --gold:#d9b46a; --gold-bright:#f0d060;
-  --vermillion:#b23a2e; --vermillion-bright:#d1483a;
+  --vermillion:#c2523d; --vermillion-bright:#d97456;
   --good-yellow:#e8b84b; --miss-red:#c96a5a;
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
   --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
@@ -32,9 +32,9 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
 .frame-border{position:absolute;top:calc(10px + var(--safe-t));right:calc(10px + var(--safe-r));
   bottom:calc(10px + var(--safe-b));left:calc(10px + var(--safe-l));
   border:1px solid rgba(217,180,106,.55);border-radius:8px;pointer-events:none;}
-.frame-border::before{content:'';position:absolute;inset:6px;border:1px solid rgba(123,201,167,.35);border-radius:5px;}
+.frame-border::before{content:'';position:absolute;inset:6px;border:1px solid rgba(217,154,117,.35);border-radius:5px;}
 .ink-decor{width:60px;height:60px;opacity:.5;margin:6px 0;border-radius:50%;
-  background:radial-gradient(circle at 30% 30%, rgba(123,201,167,.25), transparent 70%);}
+  background:radial-gradient(circle at 30% 30%, rgba(217,154,117,.25), transparent 70%);}
 
 #screenTitle{justify-content:center;text-align:center;gap:6px;}
 .brush-title{font-family:'Ma Shan Zheng',cursive;font-size:clamp(34px,10vw,64px);
@@ -51,11 +51,11 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
   touch-action:manipulation;transition:transform .12s, box-shadow .12s, background .12s;}
 .btn-elegant:active{transform:scale(.95);box-shadow:0 0 16px rgba(217,180,106,.4);}
 .btn-elegant.secondary{border-color:var(--celadon);color:var(--celadon-light);
-  background:linear-gradient(180deg, rgba(123,201,167,.12), rgba(123,201,167,.03));}
+  background:linear-gradient(180deg, rgba(217,154,117,.12), rgba(217,154,117,.03));}
 .btn-elegant:disabled{opacity:.35;pointer-events:none;}
 
 .icon-btn{position:fixed;top:calc(12px + var(--safe-t));right:calc(12px + var(--safe-r));
-  width:38px;height:38px;border-radius:50%;z-index:60;background:rgba(11,20,16,.6);
+  width:38px;height:38px;border-radius:50%;z-index:60;background:rgba(31,19,13,.6);
   border:1px solid var(--gold);color:var(--gold-bright);font-size:17px;
   display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;}
 
@@ -84,7 +84,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
 .scroll-seal{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:4px;
   border:2px solid var(--vermillion);color:var(--vermillion);font-family:'Ma Shan Zheng',cursive;
   display:flex;align-items:center;justify-content:center;font-size:16px;
-  background:rgba(178,58,46,.08);transform:rotate(-6deg);}
+  background:rgba(194,82,61,.08);transform:rotate(-6deg);}
 .scroll-title{font-family:'Ma Shan Zheng',cursive;font-size:26px;color:var(--gold-bright);margin:14px 0 2px;}
 .scroll-pinyin{font-size:11px;letter-spacing:1px;color:var(--celadon-light);opacity:.7;margin:0 0 10px;}
 .scroll-diff{color:var(--vermillion-bright);font-size:14px;letter-spacing:3px;margin-bottom:6px;}
@@ -95,7 +95,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
 .scroll-status.ready{color:var(--celadon-glow);}
 .scroll-card.locked .scroll-paper, .scroll-card.progress-locked .scroll-paper{filter:grayscale(.4) brightness(.75);}
 .scroll-edit{margin-top:auto;font-size:11px;color:var(--celadon-light);background:none;
-  border:1px solid rgba(123,201,167,.4);border-radius:4px;padding:5px 10px;cursor:pointer;touch-action:manipulation;}
+  border:1px solid rgba(217,154,117,.4);border-radius:4px;padding:5px 10px;cursor:pointer;touch-action:manipulation;}
 .song-footer{width:100%;max-width:640px;display:flex;align-items:center;justify-content:space-between;
   gap:10px;padding:10px 4px calc(6px + var(--safe-b));flex-wrap:wrap;}
 #selectedSongLabel{font-size:13px;color:var(--celadon-light);flex:1;text-align:center;}
@@ -104,7 +104,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
   display:flex;align-items:center;justify-content:center;padding:20px;}
 .modal.hidden{display:none;}
 .modal-panel{width:min(440px,92vw);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  background:linear-gradient(180deg,#132018,#0e1712);border:1px solid var(--gold);
+  background:linear-gradient(180deg,#2b1b12,#1f130d);border:1px solid var(--gold);
   border-radius:10px;padding:20px;touch-action:pan-y;}
 .modal-panel h3{font-family:'Ma Shan Zheng',cursive;color:var(--gold-bright);text-align:center;
   font-size:22px;margin:0 0 14px;}
@@ -114,13 +114,13 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
 .load-row input[type=range]{width:100%;}
 .hit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .modal-divider{height:1px;background:rgba(217,180,106,.25);margin:16px 0;}
-.small-note{font-size:11px;color:#9ab3a5;line-height:1.6;}
+.small-note{font-size:11px;color:#b8a89a;line-height:1.6;}
 .modal-actions{display:flex;justify-content:center;gap:12px;margin-top:10px;}
-#importChartText{width:100%;height:90px;background:#0b1410;color:#dcd3bd;
+#importChartText{width:100%;height:90px;background:#1f130d;color:#dcd3bd;
   border:1px solid rgba(217,180,106,.3);border-radius:6px;padding:8px;font-size:11px;
   resize:vertical;touch-action:auto;}
 
-#loadingOverlay{position:fixed;inset:0;z-index:90;background:rgba(11,20,16,.92);
+#loadingOverlay{position:fixed;inset:0;z-index:90;background:rgba(31,19,13,.92);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
 #loadingOverlay.hidden{display:none;}
 .ink-spinner{width:52px;height:52px;border-radius:50%;border:3px solid rgba(217,180,106,.2);
@@ -130,9 +130,9 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
 
 #screenGame{padding:0;}
 #btnPauseGame{position:absolute;top:calc(10px + var(--safe-t));left:calc(10px + var(--safe-l));
-  width:38px;height:38px;border-radius:50%;background:rgba(11,20,16,.6);
+  width:38px;height:38px;border-radius:50%;background:rgba(31,19,13,.6);
   border:1px solid var(--gold);color:var(--gold-bright);font-size:16px;z-index:10;touch-action:manipulation;}
-#hud{position:absolute;top:calc(10px + var(--safe-t));right:calc(10px + var(--safe-r));z-index:10;text-align:right;}
+#hud{position:absolute;top:calc(10px + var(--safe-t));right:calc(70px + var(--safe-r));z-index:10;text-align:right;}
 #comboDisplay{font-family:'Ma Shan Zheng',cursive;font-size:clamp(22px,6vw,34px);color:var(--gold-bright);
   text-shadow:0 0 14px rgba(217,180,106,.5);}
 #comboNum.pulse{animation:comboPulse .25s ease-out;}
@@ -151,7 +151,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
   animation:judgePop .78s ease-out forwards;}
 .judge-pop .sub{display:block;font-family:'Noto Serif SC',serif;font-size:11px;letter-spacing:3px;
   opacity:.75;margin-top:2px;}
-.judge-pop.perfect{color:var(--celadon-glow);text-shadow:0 0 16px rgba(143,224,176,.6);}
+.judge-pop.perfect{color:var(--celadon-glow);text-shadow:0 0 16px rgba(240,185,138,.6);}
 .judge-pop.good{color:var(--good-yellow);text-shadow:0 0 14px rgba(232,184,75,.5);}
 .judge-pop.miss{color:var(--miss-red);text-shadow:0 0 14px rgba(201,106,90,.5);}
 @keyframes judgePop{0%{opacity:0;transform:translateY(10px) scale(.7);}
@@ -162,13 +162,13 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
   display:flex;justify-content:space-around;padding:0 calc(8px + var(--safe-l)) 0 calc(8px + var(--safe-r));z-index:8;}
 .seal{width:min(58px,13vw);height:min(58px,13vw);border:3px solid var(--vermillion);color:var(--vermillion);
   font-family:'Ma Shan Zheng',cursive;font-size:clamp(18px,4vw,26px);border-radius:6px;
-  display:flex;align-items:center;justify-content:center;background:rgba(178,58,46,.06);
-  box-shadow:inset 0 0 8px rgba(178,58,46,.3);transition:transform .08s, box-shadow .08s, background .08s;
+  display:flex;align-items:center;justify-content:center;background:rgba(194,82,61,.06);
+  box-shadow:inset 0 0 8px rgba(194,82,61,.3);transition:transform .08s, box-shadow .08s, background .08s;
   touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;}
-.seal.pressed{transform:scale(.85);box-shadow:0 0 20px 4px rgba(217,180,106,.6), inset 0 0 10px rgba(178,58,46,.5);
+.seal.pressed{transform:scale(.85);box-shadow:0 0 20px 4px rgba(217,180,106,.6), inset 0 0 10px rgba(194,82,61,.5);
   background:rgba(217,180,106,.18);border-color:var(--gold-bright);color:var(--gold-bright);}
 
-#pauseOverlay{position:absolute;inset:0;background:rgba(11,20,16,.92);
+#pauseOverlay{position:absolute;inset:0;background:rgba(31,19,13,.92);
   display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;}
 #pauseOverlay.hidden{display:none;}
 #pauseOverlay p{font-family:'Ma Shan Zheng',cursive;font-size:30px;color:var(--gold);margin-bottom:6px;}
@@ -184,7 +184,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
 .grade-seal{width:140px;height:100px;margin:6px auto 14px;border:4px double var(--vermillion);border-radius:10px;
   display:flex;align-items:center;justify-content:center;font-family:'Ma Shan Zheng',cursive;font-size:34px;
   color:var(--vermillion);letter-spacing:2px;transform:rotate(-4deg);
-  box-shadow:inset 0 0 20px rgba(178,58,46,.25), 0 0 30px rgba(178,58,46,.15);background:rgba(178,58,46,.05);}
+  box-shadow:inset 0 0 20px rgba(194,82,61,.25), 0 0 30px rgba(194,82,61,.15);background:rgba(194,82,61,.05);}
 .grade-seal.treasure{animation:treasureGlow 1.6s ease-in-out infinite;}
 @keyframes treasureGlow{0%,100%{box-shadow:inset 0 0 20px rgba(240,208,96,.3),0 0 30px rgba(240,208,96,.25);}
   50%{box-shadow:inset 0 0 30px rgba(240,208,96,.55),0 0 55px rgba(240,208,96,.5);}}
@@ -277,18 +277,18 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
         <input type="range" id="offsetSlider" min="-200" max="200" value="0" style="width:100%;">
       </div>
       <div class="modal-divider"></div>
-      <div class="load-row">
+      <div class="load-row" style="display:none;">
         <label>背景音乐（进入卷首自动循环播放，可选）</label>
         <input type="file" id="importBgm" accept="audio/*">
       </div>
-      <div class="load-row">
+      <div class="load-row" 
         <label>背景音乐音量：<span id="bgmVolVal">40%</span></label>
         <input type="range" id="bgmVolSlider" min="0" max="100" value="40" style="width:100%;">
       </div>
       <div class="modal-divider"></div>
       <div class="load-row" style="text-align:center;">
-        <button class="btn-elegant secondary" id="btnExportBundle">导 出 为 可 分 享 版 本</button>
-        <p class="small-note" style="text-align:left;margin-top:8px;">
+        <button class="btn-elegant secondary" id="btnExportBundle" style="display:none;">导 出 为 可 分 享 版 本</button>
+        <p class="small-note" style="display:none;text-align:left;margin-top:8px;">
           导出后会下载一个 assets-bundle.json 文件（现已包含背景音乐）。<br>
           正式发布时，把它和 game.html 放在同一文件夹一起部署到网页托管，
           别人打开网址后会自动加载全部素材，不需要再导入。
@@ -296,7 +296,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
       </div>
       <div class="modal-divider"></div>
       <div class="load-row" style="text-align:center;">
-        <button class="btn-elegant secondary" id="btnUnlockAll">解 锁 全 部 曲 目（测试用）</button>
+        <button class="btn-elegant secondary" id="btnUnlockAll" style="display:none;">解 锁 全 部 曲 目（测试用）</button>
       </div>
       <div class="modal-actions">
         <button class="btn-elegant" id="btnCloseSettings">关 闭</button>
@@ -313,7 +313,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg-deep);co
     <button id="btnPauseGame">⏸</button>
     <div id="hud">
       <div id="comboDisplay"><span id="comboNum">0</span><span class="combo-label">连击</span></div>
-      <div id="scoreDisplay">分 <span id="scoreNum">0</span></div>
+      <div id="scoreDisplay">分数 <span id="scoreNum">0</span></div>
     </div>
     <div id="trackWrap">
       <canvas id="gameCanvas"></canvas>
@@ -789,7 +789,7 @@ async function renderSongSelect(){
     if (!ready){
       sealText = '封';
       statusHtml = `<p class="scroll-status locked">尚 未 入 窑</p>`;
-      editHtml = `<button class="scroll-edit" data-edit="${meta.id}">点击导入</button>`;
+      editHtml = ''; // 已隐藏导入入口，素材已通过 assets-bundle.json 自动加载
     } else if (!progressUnlocked){
       sealText = '锁';
       statusHtml = `<p class="scroll-status progress-locked">精 进 解 锁</p>`;
@@ -798,7 +798,7 @@ async function renderSongSelect(){
       statusHtml = `<div class="scroll-diff">${diffDots}</div>
         ${best ? `<p class="scroll-best">历史最佳 · ${best.grade} · ${best.score}分</p>` : ''}
         <p class="scroll-status ready">可 奏</p>`;
-      editHtml = `<button class="scroll-edit" data-edit="${meta.id}">更新素材</button>`;
+      editHtml = ''; // 已隐藏更新入口
     }
 
     const card = document.createElement('div');
@@ -929,13 +929,10 @@ document.getElementById('btnPlaySelected').addEventListener('click', async () =>
   currentPlayingSongId = selectedSongId;
   audioEl.src = URL.createObjectURL(rec.songBlob);
   audioEl.currentTime = 0;
-  /* 【修复】在用户点击这个手势里立刻预热播放一次，防止倒计时结束后iOS拒绝播放 */
-  const myPrewarmGen = ++audioPrewarmGen;
-  audioEl.play().then(()=>{
-    if (audioPrewarmGen !== myPrewarmGen) return; // 已经真正开始游戏了，别打断
-    audioEl.pause();
-    audioEl.currentTime = 0;
-  }).catch(()=>{});
+  /* 【修复】在用户点击这个手势里立刻同步播放+暂停，解锁iOS但不产生声音 */
+audioEl.play().catch(()=>{});
+audioEl.pause();
+audioEl.currentTime = 0;
   hitSounds = [0,1,2,3].map(i => {
     const blob = rec['hit'+i+'Blob'];
     return blob ? new Audio(URL.createObjectURL(blob)) : null;
@@ -1044,6 +1041,8 @@ function resetGameState(){
 
 function startGame(){
   audioPrewarmGen++; // 使任何尚未resolve的预热回调失效
+  audioEl.pause();          // 新增：无条件强制暂停，不管预热是否已经处理过
+  audioEl.currentTime = 0;  // 新增：无条件强制归零，保证音乐从头开始播放
   gameRunning = true;
   audioEl.play().catch(()=>{});
   lastFrameTime = performance.now();
@@ -1329,7 +1328,7 @@ function drawParticles(){
 }
 
 function render(t){
-  ctx.fillStyle = 'rgba(11,20,16,0.32)';
+  ctx.fillStyle = 'rgba(31,19,13,0.32)';
   ctx.fillRect(0,0,canvas.width,canvas.height);
   drawAmbientMotes();
 
